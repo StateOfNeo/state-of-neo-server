@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Neo.Core;
+using System.Collections.Generic;
 
 namespace StateOfNeo.Server.Controllers
 {
@@ -14,6 +11,7 @@ namespace StateOfNeo.Server.Controllers
         public ActionResult<IEnumerable<string>> Get()
         {
             return new string[] { "value1", Blockchain.Default.Height.ToString() };
+            //return new string[] { "value1" };
         }
 
         // GET api/values/5
