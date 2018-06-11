@@ -73,6 +73,7 @@ namespace StateOfNeo.Server
             app.UseSignalR(routes =>
             {
                 routes.MapHub<BlockHub>("/hubs/block");
+                routes.MapHub<NodeHub>("/hubs/node");
             });
 
             //app.UseHttpsRedirection();

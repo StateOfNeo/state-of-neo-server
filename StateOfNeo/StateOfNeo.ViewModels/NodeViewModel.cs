@@ -6,6 +6,6 @@
         public string IPAddress { get; set; }
         public int Port { get; set; }
         public string Dns { get; set; }
-        public bool IsParent { get; set; }
+        public bool AlreadyVisited { get; set; }
     }
 }
