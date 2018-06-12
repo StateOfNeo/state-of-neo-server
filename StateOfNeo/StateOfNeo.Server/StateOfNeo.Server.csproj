@@ -10,10 +10,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Neo" Version="2.7.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\neo\neo\neo.csproj" />
     <ProjectReference Include="..\StateOfNeo.Common\StateOfNeo.Common.csproj" />
     <ProjectReference Include="..\StateOfNeo.ViewModels\StateOfNeo.ViewModels.csproj" />
   </ItemGroup>

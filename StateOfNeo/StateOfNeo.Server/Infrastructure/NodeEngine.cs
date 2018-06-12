@@ -1,7 +1,9 @@
 ﻿using Neo.Network;
 using StateOfNeo.ViewModels;
+using StateOfNeo.Common;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace StateOfNeo.Server.Infrastructure
 {
@@ -19,7 +21,10 @@ namespace StateOfNeo.Server.Infrastructure
             {
                 return;
             }
-            var nodes = node.localNode.GetRemoteNodes();
+
+            var privateNode =  ObjectExtensions.GetInstanceField<LocalNode>(typeof(RemoteNode), node, "localNode");
+            
+            var nodes = privateNode.GetRemoteNodes();
             newNode = new NodeViewModel
             {
                 IPAddress = node.RemoteEndpoint.Address.ToString(),
