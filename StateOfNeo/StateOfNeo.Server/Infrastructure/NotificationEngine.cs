@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Neo.Core;
 using StateOfNeo.Common;
+using StateOfNeo.Server.Cache;
 using StateOfNeo.Server.Hubs;
 using StateOfNeo.ViewModels;
 using System.Collections.Generic;
@@ -13,11 +14,14 @@ namespace StateOfNeo.Server.Infrastructure
         private int NeoBlocksWithoutNodesUpdate = 0;
         private readonly IHubContext<NodeHub> _nodeHub;
         private readonly IHubContext<BlockHub> blockHub;
-        private List<NodeViewModel> AllNodes = new List<NodeViewModel>();
+        private readonly NodeCache _nodeCache;
 
-        public NotificationEngine(IHubContext<NodeHub> nodeHub, IHubContext<BlockHub> blockHub)
+        public NotificationEngine(IHubContext<NodeHub> nodeHub, 
+            IHubContext<BlockHub> blockHub,
+            NodeCache nodeCache)
         {
             _nodeHub = nodeHub;
+            _nodeCache = nodeCache;
             this.blockHub = blockHub;
         }
 
@@ -32,10 +36,10 @@ namespace StateOfNeo.Server.Infrastructure
 
             if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP == NeoBlocksWithoutNodesUpdate)
             {
-                AllNodes.Clear();
-                AllNodes = NodeEngine.GetNodesByBFSAlgo();
+                _nodeCache.NodeList.Clear();
+                _nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
                 NeoBlocksWithoutNodesUpdate = 0;
-                await _nodeHub.Clients.All.SendAsync("Receive", AllNodes);
+                await _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList);
             }
 
             NeoBlocksWithoutNodesUpdate++;

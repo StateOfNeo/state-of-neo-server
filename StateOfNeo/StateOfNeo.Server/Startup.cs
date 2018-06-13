@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,10 @@ using Neo.Core;
 using Neo.Implementations.Blockchains.LevelDB;
 using Neo.IO;
 using Neo.Network;
+using StateOfNeo.Data;
+using StateOfNeo.Data.Seed;
+using StateOfNeo.Infrastructure.Mapping;
+using StateOfNeo.Server.Cache;
 using StateOfNeo.Server.Hubs;
 using StateOfNeo.Server.Infrastructure;
 using System.IO;
@@ -29,7 +34,7 @@ namespace StateOfNeo.Server
                 .AddEnvironmentVariables();
             Configuration = builder.Build();
 
-            StartBlockchain();
+            this.StartBlockchain();
         }
 
         public ILoggerFactory LoggerFactory { get; set; }
@@ -39,7 +44,20 @@ namespace StateOfNeo.Server
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<NotificationEngine>();
+            //Automapper configuration initialization
+            AutoMapperConfig.Init();
+
+            services.AddSingleton<NodeCache>();
+
+            services.AddDbContext<StateOfNeoContext>(options =>
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+            })
+            .AddEntityFrameworkSqlServer();
+
+            services.AddTransient<StateOfNeoSeedData>();
+
+            services.AddSingleton<NotificationEngine>(); 
 
             services.AddCors();
             services.AddSignalR();
@@ -47,7 +65,10 @@ namespace StateOfNeo.Server
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, NotificationEngine notificationEngine)
+        public void Configure(IApplicationBuilder app, 
+            IHostingEnvironment env,
+            StateOfNeoSeedData seeder,
+            NotificationEngine notificationEngine)
         {
             if (env.IsDevelopment())
             {
@@ -77,14 +98,14 @@ namespace StateOfNeo.Server
             });
 
             //app.UseHttpsRedirection();
+            seeder.Init();
 
             notificationEngine.Init();
 
             app.UseMvc();
         }
 
-
-        public static void StartBlockchain()
+        public void StartBlockchain()
         {
             Neo.Core.Blockchain.RegisterBlockchain(new LevelDBBlockchain(NeoSettings.Default.DataDirectoryPath));
 
@@ -116,7 +137,7 @@ namespace StateOfNeo.Server
             });
         }
 
-        private static void ImportBlocks(Stream stream)
+        private void ImportBlocks(Stream stream)
         {
             LevelDBBlockchain blockchain = (LevelDBBlockchain)Neo.Core.Blockchain.Default;
             blockchain.VerifyBlocks = false;

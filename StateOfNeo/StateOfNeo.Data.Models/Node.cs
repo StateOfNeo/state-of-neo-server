@@ -1,7 +1,12 @@
-﻿namespace StateOfNeo.ViewModels
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace StateOfNeo.Data.Models
 {
-    public class NodeViewModel
+    public class Node
     {
+        [Key]
+        public int Id { get; set; }
+
         public uint? Port { get; set; }
         public string Ip { get; set; }
         public string Protocol { get; set; }
@@ -9,10 +14,7 @@
 
         public string Version { get; set; }
         public string Type { get; set; }
-
-        public int RemoteNodesCount { get; set; }
-        public int UnconectedNodesCount { get; set; }
-
+        
         public string Locale { get; set; }
         public string Location { get; set; }
         public double? Longitude { get; set; }

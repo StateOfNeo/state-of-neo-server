@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Neo.Core;
+using StateOfNeo.Data.Seed;
 using System.Collections.Generic;
 
 namespace StateOfNeo.Server.Controllers
