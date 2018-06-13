@@ -15,10 +15,16 @@ namespace StateOfNeo.Server.Controllers
             _blockHub = blockHub;
         }
 
+        [HttpGet("[action]")]
+        public IActionResult GetHeight()
+        {
+            return this.Ok(Blockchain.Default.Height.ToString());
+        }
+
         [HttpPost]
         public async Task Post()
         {
-            await _blockHub.Clients.All.SendAsync("Receive", $"Block height: {Blockchain.Default.Height}");
+            await _blockHub.Clients.All.SendAsync(Blockchain.Default.Height.ToString());
         }
     }
 }
