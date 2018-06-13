@@ -6,6 +6,7 @@ using StateOfNeo.Server.Hubs;
 using StateOfNeo.ViewModels;
 using System.Collections.Generic;
 using System.Net.WebSockets;
+using System.Linq;
 
 namespace StateOfNeo.Server.Infrastructure
 {
@@ -34,7 +35,7 @@ namespace StateOfNeo.Server.Infrastructure
         {
             await this.blockHub.Clients.All.SendAsync("Receive", e.Header.Index);
 
-            if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP == NeoBlocksWithoutNodesUpdate)
+            if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP < NeoBlocksWithoutNodesUpdate)
             {
                 _nodeCache.NodeList.Clear();
                 _nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());

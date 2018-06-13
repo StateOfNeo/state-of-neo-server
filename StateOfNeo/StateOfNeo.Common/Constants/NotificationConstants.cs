@@ -2,6 +2,6 @@
 {
     public class NotificationConstants
     {
-        public const int DEFAULT_NEO_BLOCKS_STEP = 1;
+        public const int DEFAULT_NEO_BLOCKS_STEP = 50;
     }
 }

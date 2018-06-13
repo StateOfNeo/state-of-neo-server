@@ -19,23 +19,12 @@ namespace StateOfNeo.Server.Infrastructure
 
             if (existingNode != null)
             {
-                return;
+                existingNode.IsVisited = true;
             }
 
             //var privateNode = node.GetFieldValue<LocalNode>("localNode");
-
             var privateNode = ObjectExtensions.GetInstanceField<LocalNode>(typeof(RemoteNode), node, "localNode");
 
-            var nodes = privateNode.GetRemoteNodes();
-            newNode = new NodeViewModel
-            {
-                Ip = node.RemoteEndpoint.Address.ToString().ToMatchedIp(),
-                Port = node.Version?.Port != null ? node.Version.Port : (uint)node.RemoteEndpoint.Port,
-                Version = node.Version?.UserAgent,
-                RemoteNodesCount = privateNode.RemoteNodeCount,
-                UnconectedNodesCount = privateNode.GetUnconnectedPeers().Length
-            };
-            nodeViewModels.Add(newNode);
             var unconnectedPeers = privateNode.GetUnconnectedPeers();
             foreach (var unconnectedPeer in unconnectedPeers)
             {
@@ -52,9 +41,23 @@ namespace StateOfNeo.Server.Infrastructure
                     nodeViewModels.Add(unconnectedNode);
                 }
             }
-            foreach (var remoteNode in nodes)
+
+            if (existingNode == null || !existingNode.IsVisited)
             {
-                BFSNodes(remoteNode, ref nodeViewModels);
+                newNode = new NodeViewModel
+                {
+                    Ip = node.RemoteEndpoint.Address.ToString().ToMatchedIp(),
+                    Port = node.Version?.Port != null ? node.Version.Port : (uint)node.RemoteEndpoint.Port,
+                    Version = node.Version?.UserAgent,
+                    RemoteNodesCount = privateNode.RemoteNodeCount,
+                    UnconectedNodesCount = privateNode.GetUnconnectedPeers().Length
+                };
+                nodeViewModels.Add(newNode);
+                var nodes = privateNode.GetRemoteNodes();
+                foreach (var remoteNode in nodes)
+                {
+                    BFSNodes(remoteNode, ref nodeViewModels);
+                }
             }
             return;
         }

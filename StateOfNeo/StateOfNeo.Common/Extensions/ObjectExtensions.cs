@@ -8,7 +8,8 @@ namespace StateOfNeo.Common
         public static T GetFieldValue<T>(this object instance, string fieldName)
         {
             BindingFlags bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-            FieldInfo field = instance.GetType().GetField(fieldName, bindFlags);
+            var type = instance.GetType();
+            FieldInfo field = type.GetField(fieldName, bindFlags);
             return (T)field.GetValue(instance);
         }
 
