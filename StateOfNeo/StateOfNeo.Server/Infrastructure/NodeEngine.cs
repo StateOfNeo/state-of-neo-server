@@ -14,7 +14,7 @@ namespace StateOfNeo.Server.Infrastructure
             var newNode = new NodeViewModel();
             var existingNode = nodeViewModels
                     .FirstOrDefault(
-                        n => n.IPAddress == node.RemoteEndpoint.Address.ToString() &&
+                        n => n.Ip == node.RemoteEndpoint.Address.ToString().ToMatchedIp() &&
                         n.Port == node.RemoteEndpoint.Port);
 
             if (existingNode != null)
@@ -22,16 +22,36 @@ namespace StateOfNeo.Server.Infrastructure
                 return;
             }
 
-            var privateNode =  ObjectExtensions.GetInstanceField<LocalNode>(typeof(RemoteNode), node, "localNode");
-            
+            //var privateNode = node.GetFieldValue<LocalNode>("localNode");
+
+            var privateNode = ObjectExtensions.GetInstanceField<LocalNode>(typeof(RemoteNode), node, "localNode");
+
             var nodes = privateNode.GetRemoteNodes();
             newNode = new NodeViewModel
             {
-                IPAddress = node.RemoteEndpoint.Address.ToString(),
-                Port = node.RemoteEndpoint.Port,
-                Version = node.Version?.UserAgent
+                Ip = node.RemoteEndpoint.Address.ToString().ToMatchedIp(),
+                Port = node.Version?.Port != null ? node.Version.Port : (uint)node.RemoteEndpoint.Port,
+                Version = node.Version?.UserAgent,
+                RemoteNodesCount = privateNode.RemoteNodeCount,
+                UnconectedNodesCount = privateNode.GetUnconnectedPeers().Length
             };
             nodeViewModels.Add(newNode);
+            var unconnectedPeers = privateNode.GetUnconnectedPeers();
+            foreach (var unconnectedPeer in unconnectedPeers)
+            {
+                if (nodeViewModels.FirstOrDefault(
+                        n => n.Ip == unconnectedPeer.ToString().ToMatchedIp() &&
+                        n.Port == unconnectedPeer.Port) == null)
+                {
+                    var unconnectedNode = new NodeViewModel
+                    {
+                        Ip = unconnectedPeer.Address.ToString().ToMatchedIp(),
+                        Port = (uint)unconnectedPeer.Port
+                    };
+
+                    nodeViewModels.Add(unconnectedNode);
+                }
+            }
             foreach (var remoteNode in nodes)
             {
                 BFSNodes(remoteNode, ref nodeViewModels);
