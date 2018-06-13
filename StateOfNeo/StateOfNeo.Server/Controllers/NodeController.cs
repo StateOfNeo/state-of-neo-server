@@ -22,7 +22,8 @@ namespace StateOfNeo.Server.Controllers
         [HttpPost]
         public async Task Post()
         {
-            await _nodeHub.Clients.All.SendAsync("Receive", NodeEngine.GetNodesByBFSAlgo());
+            var nodes = NodeEngine.GetNodesByBFSAlgo();
+            await _nodeHub.Clients.All.SendAsync("Receive", nodes);
         }
     }
 }

@@ -12,11 +12,13 @@ namespace StateOfNeo.Server.Infrastructure
     {
         private int NeoBlocksWithoutNodesUpdate = 0;
         private readonly IHubContext<NodeHub> _nodeHub;
+        private readonly IHubContext<BlockHub> blockHub;
         private List<NodeViewModel> AllNodes = new List<NodeViewModel>();
 
-        public NotificationEngine(IHubContext<NodeHub> nodeHub)
+        public NotificationEngine(IHubContext<NodeHub> nodeHub, IHubContext<BlockHub> blockHub)
         {
             _nodeHub = nodeHub;
+            this.blockHub = blockHub;
         }
 
         public void Init()
@@ -26,6 +28,8 @@ namespace StateOfNeo.Server.Infrastructure
 
         private async void UpdateBlockCount_Completed(object sender, Block e)
         {
+            await this.blockHub.Clients.All.SendAsync("Receive", e.Header.Index);
+
             if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP == NeoBlocksWithoutNodesUpdate)
             {
                 AllNodes.Clear();
