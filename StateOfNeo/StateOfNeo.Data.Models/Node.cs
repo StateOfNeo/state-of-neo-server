@@ -1,14 +1,22 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace StateOfNeo.Data.Models
 {
     public class Node
     {
+        private IEnumerable<NodeAddress> _nodeAddresses;
+        private IEnumerable<TimeEvent> _events;
+
+        public Node()
+        {
+            _nodeAddresses = new HashSet<NodeAddress>();
+            _events = new HashSet<TimeEvent>();
+        }
+
         [Key]
         public int Id { get; set; }
 
-        public uint? Port { get; set; }
-        public string Ip { get; set; }
         public string Protocol { get; set; }
         public string Url { get; set; }
 
@@ -21,5 +29,17 @@ namespace StateOfNeo.Data.Models
         public double? Latitude { get; set; }
 
         public string Net { get; set; }
+
+        public virtual IEnumerable<NodeAddress> NodeAddresses
+        {
+            get { return _nodeAddresses; }
+            set { _nodeAddresses = value; }
+        }
+
+        public virtual IEnumerable<TimeEvent> Events
+        {
+            get { return _events; }
+            set { _events = value; }
+        }
     }
 }

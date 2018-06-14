@@ -10,8 +10,7 @@
         public string Version { get; set; }
         public string Type { get; set; }
 
-        public int RemoteNodesCount { get; set; }
-        public int UnconectedNodesCount { get; set; }
+        public int Peers { get; set; }
 
         public string Locale { get; set; }
         public string Location { get; set; }

@@ -16,13 +16,19 @@ namespace StateOfNeo.Server.Infrastructure
         private readonly IHubContext<NodeHub> _nodeHub;
         private readonly IHubContext<BlockHub> blockHub;
         private readonly NodeCache _nodeCache;
+        private readonly NodeSynchronizer _nodeSynchronizer;
+        private readonly RPCNodeCaller _rPCNodeCaller;
 
-        public NotificationEngine(IHubContext<NodeHub> nodeHub, 
+        public NotificationEngine(IHubContext<NodeHub> nodeHub,
             IHubContext<BlockHub> blockHub,
-            NodeCache nodeCache)
+            NodeCache nodeCache,
+            NodeSynchronizer nodeSynchronizer,
+            RPCNodeCaller rPCNodeCaller)
         {
             _nodeHub = nodeHub;
             _nodeCache = nodeCache;
+            _nodeSynchronizer = nodeSynchronizer;
+            _rPCNodeCaller = rPCNodeCaller;
             this.blockHub = blockHub;
         }
 
@@ -39,6 +45,9 @@ namespace StateOfNeo.Server.Infrastructure
             {
                 _nodeCache.NodeList.Clear();
                 _nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
+                //await _rPCNodeCaller.GetNodeHeight("http://seed5.neo.org:20332");
+                //await _nodeSynchronizer.SyncCacheAndDb();
+                //await _rPCNodeCaller.GetNodeHeight("http://47.91.92.192:20332");
                 NeoBlocksWithoutNodesUpdate = 0;
                 await _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList);
             }

@@ -49,8 +49,7 @@ namespace StateOfNeo.Server.Infrastructure
                     Ip = node.RemoteEndpoint.Address.ToString().ToMatchedIp(),
                     Port = node.Version?.Port != null ? node.Version.Port : (uint)node.RemoteEndpoint.Port,
                     Version = node.Version?.UserAgent,
-                    RemoteNodesCount = privateNode.RemoteNodeCount,
-                    UnconectedNodesCount = privateNode.GetUnconnectedPeers().Length
+                    Peers = privateNode.RemoteNodeCount + privateNode.GetUnconnectedPeers().Length + privateNode.GetBadPeers().Length,
                 };
                 nodeViewModels.Add(newNode);
                 var nodes = privateNode.GetRemoteNodes();

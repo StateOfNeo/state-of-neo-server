@@ -13,5 +13,7 @@ namespace StateOfNeo.Data
         }
 
         public DbSet<Node> Nodes { get; set; }
+        public DbSet<NodeAddress> NodeAddresses { get; set; }
+        public DbSet<TimeEvent> TimeEvents { get; set; }
     }
 }

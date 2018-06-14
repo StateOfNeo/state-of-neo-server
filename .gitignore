@@ -329,3 +329,4 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 /StateOfNeo/StateOfNeo.Server/ChainTestNet
+/StateOfNeo/StateOfNeo.Server/ChainMainNet

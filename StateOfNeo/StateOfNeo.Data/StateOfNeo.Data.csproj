@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\StateOfNeo.Common\StateOfNeo.Common.csproj" />
     <ProjectReference Include="..\StateOfNeo.Data.Models\StateOfNeo.Data.Models.csproj" />
+    <ProjectReference Include="..\StateOfNeo.ViewModels\StateOfNeo.ViewModels.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -48,6 +48,8 @@ namespace StateOfNeo.Server
             AutoMapperConfig.Init();
 
             services.AddSingleton<NodeCache>();
+            services.AddSingleton<NodeSynchronizer>();
+            services.AddSingleton<RPCNodeCaller>();
 
             services.AddDbContext<StateOfNeoContext>(options =>
             {
@@ -57,7 +59,7 @@ namespace StateOfNeo.Server
 
             services.AddTransient<StateOfNeoSeedData>();
 
-            services.AddSingleton<NotificationEngine>(); 
+            services.AddSingleton<NotificationEngine>();
 
             services.AddCors();
             services.AddSignalR();
@@ -65,7 +67,7 @@ namespace StateOfNeo.Server
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, 
+        public void Configure(IApplicationBuilder app,
             IHostingEnvironment env,
             StateOfNeoSeedData seeder,
             NotificationEngine notificationEngine)
