@@ -2,9 +2,9 @@
 
 namespace StateOfNeo.Common.RPC
 {
-    public class RPCResponseBody : RPCBaseBody
+    public class RPCResponseBody<T> : RPCBaseBody
     {
         [JsonProperty(PropertyName = "result")]
-        public string Result { get; set; }
+        public T Result { get; set; }
     }
 }

@@ -39,17 +39,15 @@ namespace StateOfNeo.Server.Infrastructure
 
         private async void UpdateBlockCount_Completed(object sender, Block e)
         {
-            await this.blockHub.Clients.All.SendAsync("Receive", e.Header.Index);
+            this.blockHub.Clients.All.SendAsync("Receive", e.Header.Index).ConfigureAwait(false);
 
             if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP < NeoBlocksWithoutNodesUpdate)
             {
                 _nodeCache.NodeList.Clear();
                 _nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
-                //await _rPCNodeCaller.GetNodeHeight("http://seed5.neo.org:20332");
-                //await _nodeSynchronizer.SyncCacheAndDb();
-                //await _rPCNodeCaller.GetNodeHeight("http://47.91.92.192:20332");
+                _nodeSynchronizer.Init().ConfigureAwait(false);
                 NeoBlocksWithoutNodesUpdate = 0;
-                await _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList);
+                _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList).ConfigureAwait(false);
             }
 
             NeoBlocksWithoutNodesUpdate++;

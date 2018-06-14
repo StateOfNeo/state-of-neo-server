@@ -1,4 +1,4 @@
-﻿namespace StateOfNeo.Common.Constants
+﻿namespace StateOfNeo.Common
 {
     public class RPCCallConstants
     {

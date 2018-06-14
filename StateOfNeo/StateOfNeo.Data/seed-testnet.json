@@ -4,14 +4,16 @@
     "url": "https://neoscan-testnet.io/api/test_net/v1/",
     "location": "United States",
     "locale": "us",
-    "type": "REST"
+    "type": "REST",
+    "ip": "173.245.59.151"
   },
   {
     "service": "neon",
     "url": "http://testnet-api.neonwallet.com/v2/",
     "location": "United States",
     "locale": "us",
-    "type": "REST"
+    "type": "REST",
+    "ip": "217.70.179.2"
   },
   {
     "protocol": "https",
@@ -68,7 +70,8 @@
     "location": "USA",
     "locale": "us",
     "port": "8880",
-    "type": "RPC"
+    "type": "RPC",
+    "ip": "104.25.3.11"
   },
   {
     "protocol": "http",
@@ -76,7 +79,8 @@
     "location": "USA",
     "locale": "us",
     "port": "8880",
-    "type": "RPC"
+    "type": "RPC",
+    "ip": "104.25.2.11"
   },
   {
     "protocol": "http",
@@ -84,7 +88,8 @@
     "location": "USA",
     "locale": "us",
     "port": "8880",
-    "type": "RPC"
+    "type": "RPC",
+    "ip": "104.25.3.11"
   },
   {
     "protocol": "http",
@@ -92,7 +97,8 @@
     "location": "USA",
     "locale": "us",
     "port": "8880",
-    "type": "RPC"
+    "type": "RPC",
+    "ip": "104.25.2.11"
   },
   {
     "protocol": "http",
@@ -100,6 +106,7 @@
     "location": "USA",
     "locale": "us",
     "port": "8880",
-    "type": "RPC"
+    "type": "RPC",
+    "ip": "104.25.3.11"
   }
 ]

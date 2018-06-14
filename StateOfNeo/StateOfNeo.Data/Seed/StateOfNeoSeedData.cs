@@ -66,7 +66,7 @@ namespace StateOfNeo.Data.Seed
                     Location = node.Location,
                     Protocol = node.Protocol,
                     Url = node.Url,
-                    Type = node.Type,
+                    Type = Enum.Parse<NodeAddressType>(node.Type),
                     Version = node.Version
                 };
                 _ctx.Nodes.Add(newNode);

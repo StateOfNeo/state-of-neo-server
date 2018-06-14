@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using StateOfNeo.Common;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace StateOfNeo.Data.Models
@@ -20,14 +21,18 @@ namespace StateOfNeo.Data.Models
         public string Protocol { get; set; }
         public string Url { get; set; }
 
+        public int? Height { get; set; }
+        public int? Peers { get; set; }
+        public int? MemoryPool { get; set; }
         public string Version { get; set; }
-        public string Type { get; set; }
+        public NodeAddressType Type { get; set; }
         
         public string Locale { get; set; }
         public string Location { get; set; }
         public double? Longitude { get; set; }
         public double? Latitude { get; set; }
 
+        public string SuccessUrl { get; set; }
         public string Net { get; set; }
 
         public virtual IEnumerable<NodeAddress> NodeAddresses

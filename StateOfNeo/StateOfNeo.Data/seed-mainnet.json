@@ -19,6 +19,7 @@
     "protocol": "https",
     "url": "seed1.switcheo.network",
     "location": "Singapore",
+    "ip": "13.229.31.30",
     "port": "10331",
     "locale": "sg",
     "type": "RPC"
@@ -27,6 +28,7 @@
     "protocol": "https",
     "url": "seed2.switcheo.network",
     "location": "Singapore",
+    "ip": "54.254.216.30",
     "port": "10331",
     "locale": "sg",
     "type": "RPC"
@@ -35,6 +37,7 @@
     "protocol": "https",
     "url": "seed3.switcheo.network",
     "location": "Singapore",
+    "ip": "52.77.183.144",
     "port": "10331",
     "locale": "sg",
     "type": "RPC"
@@ -43,6 +46,7 @@
     "protocol": "https",
     "url": "seed4.switcheo.network",
     "location": "Singapore",
+    "ip": "54.254.216.30",
     "port": "10331",
     "locale": "sg",
     "type": "RPC"
@@ -152,6 +156,7 @@
     "protocol": "http",
     "url": "seed1.cityofzion.io",
     "location": "USA",
+    "ip": "104.25.2.11",
     "locale": "us",
     "port": "8080",
     "type": "RPC"
@@ -160,6 +165,7 @@
     "protocol": "http",
     "url": "seed2.cityofzion.io",
     "location": "USA",
+    "ip": "104.25.2.11",
     "locale": "us",
     "port": "8080",
     "type": "RPC"
@@ -168,6 +174,7 @@
     "protocol": "http",
     "url": "seed3.cityofzion.io",
     "location": "USA",
+    "ip": "104.25.2.11",
     "locale": "us",
     "port": "8080",
     "type": "RPC"
@@ -176,6 +183,7 @@
     "protocol": "http",
     "url": "seed4.cityofzion.io",
     "location": "USA",
+    "ip": "104.25.2.11",
     "locale": "us",
     "port": "8080",
     "type": "RPC"
@@ -184,6 +192,7 @@
     "protocol": "http",
     "url": "seed5.cityofzion.io",
     "location": "USA",
+    "ip": "104.25.2.11",
     "locale": "us",
     "port": "8080",
     "type": "RPC"
@@ -240,6 +249,7 @@
     "protocol": "http",
     "url": "seed1.redpulse.com",
     "location": "Frankfurt",
+    "ip": "18.194.24.250",
     "locale": "de",
     "port": "10332",
     "type": "RPC"
@@ -248,6 +258,7 @@
     "protocol": "http",
     "url": "seed2.redpulse.com",
     "location": "Singapore",
+    "ip": "13.250.241.7",
     "locale": "sg",
     "port": "10332",
     "type": "RPC"
@@ -256,6 +267,7 @@
     "protocol": "https",
     "url": "seed1.redpulse.com",
     "location": "Frankfurt",
+    "ip": "18.194.24.250",
     "locale": "de",
     "port": "10331",
     "type": "RPC"
@@ -264,6 +276,7 @@
     "protocol": "https",
     "url": "seed2.redpulse.com",
     "location": "Singapore",
+    "ip": "13.250.241.7",
     "locale": "sg",
     "port": "10331",
     "type": "RPC"
@@ -272,6 +285,7 @@
     "protocol": "https",
     "url": "pyrpc1.redpulse.com",
     "location": "Frankfurt",
+    "ip": "35.158.246.146",
     "locale": "de",
     "port": "10331",
     "type": "RPC"
@@ -280,6 +294,7 @@
     "protocol": "https",
     "url": "pyrpc2.redpulse.com",
     "location": "Singapore",
+    "ip": "52.76.36.115",
     "locale": "sg",
     "port": "10331",
     "type": "RPC"
@@ -288,6 +303,7 @@
     "protocol": "http",
     "url": "pyrpc1.redpulse.com",
     "location": "Frankfurt",
+    "ip": "35.158.246.146",
     "locale": "de",
     "port": "10332",
     "type": "RPC"
@@ -296,6 +312,7 @@
     "protocol": "http",
     "url": "pyrpc2.redpulse.com",
     "location": "Singapore",
+    "ip": "52.76.36.115",
     "locale": "sg",
     "port": "10332",
     "type": "RPC"
@@ -331,6 +348,7 @@
     "protocol": "https",
     "url": "pyrpc1.narrative.network",
     "location": "Texas",
+    "ip": "199.255.144.207",
     "locale": "us",
     "port": "443",
     "type": "RPC"
@@ -339,6 +357,7 @@
     "service": "pyrest",
     "url": "https://pyrest1.narrative.network/v1/",
     "location": "Texas",
+    "ip": "199.255.144.207",
     "locale": "us",
     "type": "REST"
   },
@@ -346,6 +365,7 @@
     "protocol": "https",
     "url": "pyrpc2.narrative.network",
     "location": "New York",
+    "ip": "159.89.237.46",
     "locale": "us",
     "port": "443",
     "type": "RPC"
@@ -354,6 +374,7 @@
     "service": "pyrest",
     "url": "https://pyrest2.narrative.network/v1/",
     "location": "New York",
+    "ip": "159.89.237.46",
     "locale": "us",
     "type": "REST"
   },
@@ -361,6 +382,7 @@
     "protocol": "https",
     "url": "pyrpc3.narrative.network",
     "location": "London",
+    "ip": "178.62.84.85",
     "locale": "gb",
     "port": "443",
     "type": "RPC"
@@ -369,6 +391,7 @@
     "service": "pyrest",
     "url": "https://pyrest3.narrative.network/v1/",
     "location": "London",
+    "ip": "178.62.84.85",
     "locale": "gb",
     "type": "REST"
   },
@@ -376,6 +399,7 @@
     "protocol": "https",
     "url": "pyrpc4.narrative.network",
     "location": "Amsterdam",
+    "ip": "188.166.2.205",
     "locale": "nl",
     "port": "443",
     "type": "RPC"
@@ -384,6 +408,7 @@
     "service": "pyrest",
     "url": "https://pyrest4.narrative.network/v1/",
     "location": "Amsterdam",
+    "ip": "188.166.2.205",
     "locale": "nl",
     "type": "REST"
   },

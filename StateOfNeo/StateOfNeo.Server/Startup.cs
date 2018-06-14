@@ -63,7 +63,12 @@ namespace StateOfNeo.Server
 
             services.AddCors();
             services.AddSignalR();
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc(options =>
+            {
+                options.SslPort = 5001;
+                options.Filters.Add(new RequireHttpsAttribute());
+            })
+            .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

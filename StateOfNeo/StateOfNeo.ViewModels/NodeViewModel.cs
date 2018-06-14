@@ -10,7 +10,9 @@
         public string Version { get; set; }
         public string Type { get; set; }
 
-        public int Peers { get; set; }
+        public int? Height { get; set; }
+        public int? Peers { get; set; }
+        public int? MemoryPool { get; set; }
 
         public string Locale { get; set; }
         public string Location { get; set; }

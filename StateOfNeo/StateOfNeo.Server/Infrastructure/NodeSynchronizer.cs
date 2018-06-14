@@ -30,7 +30,14 @@ namespace StateOfNeo.Server.Infrastructure
                 .ToList();
         }
 
-        public async Task SyncCacheAndDb()
+        public async Task Init()
+        {
+            await SyncCacheAndDb();
+            await UpdateNodesInformation();
+            _nodeCache.Update(_ctx.Nodes.Include(n => n.NodeAddresses).ProjectTo<NodeViewModel>());
+        }
+
+        private async Task SyncCacheAndDb()
         {
             foreach (var cacheNode in _nodeCache.NodeList)
             {
@@ -72,12 +79,9 @@ namespace StateOfNeo.Server.Infrastructure
                     }
                 }
             }
-
-
-            _nodeCache.Update(CachedDbNodes.AsQueryable().ProjectTo<NodeViewModel>());
         }
 
-        public async Task UpdateNodesInformation()
+        private async Task UpdateNodesInformation()
         {
             var dbNodes = _ctx.Nodes
                   .Include(n => n.NodeAddresses)
@@ -85,16 +89,70 @@ namespace StateOfNeo.Server.Infrastructure
 
             foreach (var dbNode in dbNodes)
             {
-                if (string.IsNullOrEmpty(dbNode.Url))
+                if (dbNode.Type != NodeAddressType.REST)
                 {
-                }
-                foreach (var address in dbNode.NodeAddresses)
-                {
-                    var height = await _rPCNodeCaller.GetNodeHeight($"{address.Ip}:{address.Port}");
-                    if (height > -1)
-                    {
+                    var newHeight = await _rPCNodeCaller.GetNodeHeight(dbNode);
+                    var newVersion = await _rPCNodeCaller.GetNodeVersion(dbNode);
 
+                    if (!string.IsNullOrEmpty(dbNode.SuccessUrl))
+                    {
+                        var something = "";
                     }
+
+                    dbNode.Version = newVersion;
+                    dbNode.Height = newHeight;
+                    _ctx.Nodes.Update(dbNode);
+                    await _ctx.SaveChangesAsync();
+
+                    //if (string.IsNullOrEmpty(dbNode.Version) ||
+                    //    dbNode.Type == NodeAddressType.RPC ||
+                    //    string.IsNullOrEmpty(dbNode.Protocol) ||
+                    //    dbNode.NodeAddresses.FirstOrDefault(na => na.Type == NodeAddressType.Default) != null)
+                    //{
+                    //    foreach (var address in dbNode.NodeAddresses)
+                    //    {
+                    //        if (address.Type == NodeAddressType.Default || !address.Port.HasValue)
+                    //        {
+                    //            var height = await _rPCNodeCaller.GetNodeHeight(address.Ip, address.Port);
+                    //            if (height > -1)
+                    //            {
+                    //                address.Type = NodeAddressType.RPC;
+                    //                dbNode.Type = NodeAddressType.RPC;
+                    //                dbNode.Height = height;
+                    //            }
+                    //        }
+                    //        if (string.IsNullOrEmpty(dbNode.Version))
+                    //        {
+                    //            if (!string.IsNullOrEmpty(dbNode.Protocol))
+                    //            {
+                    //                var version = await _rPCNodeCaller.GetNodeVersion($"{dbNode.Protocol}://{address.Ip}:{address.Port}");
+                    //                if (!string.IsNullOrEmpty(version))
+                    //                {
+                    //                    dbNode.Version = version;
+                    //                }
+                    //            }
+                    //            else
+                    //            {
+                    //                foreach (var protocol in RPCCallConstants.PROTOCOL_TYPES_TESTS)
+                    //                {
+                    //                    var version = await _rPCNodeCaller.GetNodeVersion($"{protocol}://{address.Ip}:{address.Port}");
+                    //                    if (!string.IsNullOrEmpty(version))
+                    //                    {
+                    //                        dbNode.Version = version;
+                    //                        break;
+                    //                    }
+                    //                }
+                    //            }
+                    //        }
+
+                    //        _ctx.NodeAddresses.Update(address);
+                    //        await _ctx.SaveChangesAsync();
+                    //    }
+
+                    //    _ctx.Nodes.Update(dbNode);
+                    //    await _ctx.SaveChangesAsync();
+                    //}
+
                 }
             }
         }
