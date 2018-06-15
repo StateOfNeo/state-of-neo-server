@@ -10,6 +10,7 @@ using System.Linq;
 using System;
 using StateOfNeo.Data;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace StateOfNeo.Server.Infrastructure
 {
@@ -55,13 +56,14 @@ namespace StateOfNeo.Server.Infrastructure
             {
                 secondsElapsed = (ulong)(DateTime.UtcNow - LastBlockReceiveTime).TotalSeconds; //DateTime.UtcNow.Subtract(LastBlockReceiveTime).TotalSeconds;
             }
-            var averageSeconds = GetAverageBlockTime(secondsElapsed);
+            //var averageSeconds = await GetAverageBlockTime(secondsElapsed);
             //await this.blockHub.Clients.All.SendAsync("Receive", averageSeconds);
+
+            var average = Blockchain.SecondsPerBlock;
 
             if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP < NeoBlocksWithoutNodesUpdate)
             {
-                //_nodeCache.NodeList.Clear();
-                //_nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
+                _nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
                 //_nodeSynchronizer.Init().ConfigureAwait(false);
                 NeoBlocksWithoutNodesUpdate = 0;
                 _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList).ConfigureAwait(false);
@@ -71,13 +73,13 @@ namespace StateOfNeo.Server.Infrastructure
             NeoBlocksWithoutNodesUpdate++;
         }
 
-        private decimal GetAverageBlockTime(ulong secondsElapsed)
+        private async Task<decimal> GetAverageBlockTime(ulong secondsElapsed)
         {
             var blockInfo = _ctx.BlockchainInfos.First(bi => bi.Net == _netSettings.Net);
             blockInfo.BlockCount++;
             blockInfo.SecondsCount += secondsElapsed;
             _ctx.BlockchainInfos.Update(blockInfo);
-            _ctx.SaveChanges();
+            await _ctx.SaveChangesAsync();
 
             return blockInfo.AverageBlockTime;
         }

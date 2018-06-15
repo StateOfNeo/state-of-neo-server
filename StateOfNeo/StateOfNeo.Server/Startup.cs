@@ -52,7 +52,8 @@ namespace StateOfNeo.Server
 
             services.AddSingleton<NodeCache>();
             services.AddSingleton<NodeSynchronizer>();
-            services.AddSingleton<RPCNodeCaller>();
+            services.AddSingleton<RPCNodeCaller>(); 
+            services.AddSingleton<LocationCaller>();
 
             services.AddDbContext<StateOfNeoContext>(options =>
             {

@@ -25,31 +25,31 @@ namespace StateOfNeo.Server.Infrastructure
             //var privateNode = node.GetFieldValue<LocalNode>("localNode");
             var privateNode = ObjectExtensions.GetInstanceField<LocalNode>(typeof(RemoteNode), node, "localNode");
 
-            var unconnectedPeers = privateNode.GetUnconnectedPeers();
-            foreach (var unconnectedPeer in unconnectedPeers)
-            {
-                if (nodeViewModels.FirstOrDefault(
-                        n => n.Ip == unconnectedPeer.ToString().ToMatchedIp() &&
-                        n.Port == unconnectedPeer.Port) == null)
-                {
-                    var unconnectedNode = new NodeViewModel
-                    {
-                        Ip = unconnectedPeer.Address.ToString().ToMatchedIp(),
-                        Port = (uint)unconnectedPeer.Port
-                    };
+            //var unconnectedPeers = privateNode.GetUnconnectedPeers();
+            //foreach (var unconnectedPeer in unconnectedPeers)
+            //{
+            //    if (nodeViewModels.FirstOrDefault(
+            //            n => n.Ip == unconnectedPeer.ToString().ToMatchedIp() &&
+            //            n.Port == unconnectedPeer.Port) == null)
+            //    {
+            //        var unconnectedNode = new NodeViewModel
+            //        {
+            //            Ip = unconnectedPeer.Address.ToString().ToMatchedIp(),
+            //            Port = (uint)unconnectedPeer.Port
+            //        };
 
-                    nodeViewModels.Add(unconnectedNode);
-                }
-            }
+            //        nodeViewModels.Add(unconnectedNode);
+            //    }
+            //}
 
-            if (existingNode == null || !existingNode.IsVisited)
+            if ((existingNode == null || !existingNode.IsVisited) && node.Version != null)
             {
                 newNode = new NodeViewModel
                 {
                     Ip = node.RemoteEndpoint.Address.ToString().ToMatchedIp(),
                     Port = node.Version?.Port != null ? node.Version.Port : (uint)node.RemoteEndpoint.Port,
                     Version = node.Version?.UserAgent,
-                    Peers = privateNode.RemoteNodeCount + privateNode.GetUnconnectedPeers().Length + privateNode.GetBadPeers().Length,
+                    Peers = privateNode.RemoteNodeCount,
                 };
                 nodeViewModels.Add(newNode);
                 var nodes = privateNode.GetRemoteNodes();

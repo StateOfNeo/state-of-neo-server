@@ -2,7 +2,7 @@
 {
     public enum NodeAddressType
     {
-        Default,
+        Undefined,
         REST,
         RPC,
         P2P_TCP,

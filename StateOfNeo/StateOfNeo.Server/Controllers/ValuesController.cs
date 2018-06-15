@@ -9,10 +9,12 @@ namespace StateOfNeo.Server.Controllers
     public class ValuesController : BaseApiController
     {
         private readonly NodeSynchronizer _nodeSynchronizer;
+        private readonly LocationCaller _locationCaller;
 
-        public ValuesController(NodeSynchronizer nodeSynchronizer)
+        public ValuesController(NodeSynchronizer nodeSynchronizer, LocationCaller locationCaller)
         {
             _nodeSynchronizer = nodeSynchronizer;
+            _locationCaller = locationCaller;
         }
 
         // GET api/values
@@ -34,6 +36,7 @@ namespace StateOfNeo.Server.Controllers
         [HttpPost]
         public void Post()
         {
+            //_locationCaller.UpdateAllNodeLocations().ConfigureAwait(false);
             _nodeSynchronizer.Init().ConfigureAwait(false);
         }
 

@@ -19,7 +19,7 @@ namespace StateOfNeo.Server.Cache
 
         public void Update(IEnumerable<NodeViewModel> nodeViewModels)
         {
-            NodeList = nodeViewModels.ToList();
+            NodeList.AddRange(nodeViewModels.ToList());
         }
     }
 }

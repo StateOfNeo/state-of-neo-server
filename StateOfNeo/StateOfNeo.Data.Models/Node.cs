@@ -31,6 +31,7 @@ namespace StateOfNeo.Data.Models
         public string Location { get; set; }
         public double? Longitude { get; set; }
         public double? Latitude { get; set; }
+        public string FlagUrl { get; set; }
 
         public string SuccessUrl { get; set; }
         public string Net { get; set; }

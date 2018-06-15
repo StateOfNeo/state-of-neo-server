@@ -19,18 +19,26 @@ namespace StateOfNeo.Server.Infrastructure
         private NodeCache _nodeCache;
         private StateOfNeoContext _ctx;
         private RPCNodeCaller _rPCNodeCaller;
+        private LocationCaller _locationCaller;
         private readonly IOptions<NetSettings> _netsettings;
         private List<Node> CachedDbNodes;
 
         public NodeSynchronizer(NodeCache nodeCache,
             StateOfNeoContext ctx,
             RPCNodeCaller rPCNodeCaller,
+            LocationCaller locationCaller,
             IOptions<NetSettings> netsettings)
         {
             _nodeCache = nodeCache;
             _ctx = ctx;
             _rPCNodeCaller = rPCNodeCaller;
+            _locationCaller = locationCaller;
             _netsettings = netsettings;
+            UpdateDbCache();
+        }
+
+        private void UpdateDbCache()
+        {
             CachedDbNodes = _ctx.Nodes
                 .Include(n => n.NodeAddresses)
                 .Where(n => n.Net.ToLower() == _netsettings.Value.Net.ToLower())
@@ -41,7 +49,7 @@ namespace StateOfNeo.Server.Infrastructure
         {
             await SyncCacheAndDb();
             await UpdateNodesInformation();
-            _nodeCache.Update(_ctx.Nodes.Include(n => n.NodeAddresses).ProjectTo<NodeViewModel>());
+            _nodeCache.Update(CachedDbNodes.AsQueryable().ProjectTo<NodeViewModel>());
         }
 
         private async Task SyncCacheAndDb()
@@ -49,11 +57,12 @@ namespace StateOfNeo.Server.Infrastructure
             foreach (var cacheNode in _nodeCache.NodeList)
             {
                 var existingDbNode = CachedDbNodes
-                    .FirstOrDefault(dbn =>
-                        dbn.NodeAddresses.FirstOrDefault(ia => ia.Ip == cacheNode.Ip) != null);
+                    .FirstOrDefault(dbn => dbn.NodeAddresses.Any(ia => ia.Ip == cacheNode.Ip));
+
                 if (existingDbNode == null)
                 {
                     var newDbNode = Mapper.Map<Node>(cacheNode);
+                    newDbNode.Type = NodeAddressType.P2P_TCP;
                     newDbNode.Net = _netsettings.Value.Net;
                     _ctx.Nodes.Add(newDbNode);
                     await _ctx.SaveChangesAsync();
@@ -62,7 +71,7 @@ namespace StateOfNeo.Server.Infrastructure
                     {
                         Ip = cacheNode.Ip,
                         Port = cacheNode.Port,
-                        Type = cacheNode.Type == null ? NodeAddressType.Default : Enum.Parse<NodeAddressType>(cacheNode.Type),
+                        Type = NodeAddressType.P2P_TCP,
 
                         NodeId = newDbNode.Id
                     };
@@ -78,7 +87,7 @@ namespace StateOfNeo.Server.Infrastructure
                         {
                             Ip = cacheNode.Ip,
                             Port = cacheNode.Port,
-                            Type = cacheNode.Type == null ? NodeAddressType.Default : Enum.Parse<NodeAddressType>(cacheNode.Type),
+                            Type = NodeAddressType.P2P_TCP,
 
                             NodeId = existingDbNode.Id
                         };
@@ -94,81 +103,41 @@ namespace StateOfNeo.Server.Infrastructure
             var dbNodes = _ctx.Nodes
                     .Include(n => n.NodeAddresses)
                     .Where(n => n.Net.ToLower() == _netsettings.Value.Net.ToLower())
-                    //.Where(n => n.Id == 15)
+                    .Where(n => n.Id == 138 || n.Id == 199)
                     .ToList();
 
             foreach (var dbNode in dbNodes)
             {
                 if (dbNode.Type != NodeAddressType.REST)
                 {
+                    var oldSuccessUrl = dbNode.SuccessUrl;
                     var newHeight = await _rPCNodeCaller.GetNodeHeight(dbNode);
-                    var newVersion = await _rPCNodeCaller.GetNodeVersion(dbNode);
-
-                    if (!string.IsNullOrEmpty(dbNode.SuccessUrl))
+                    if (newHeight != null)
                     {
-                        var something = "";
+                        dbNode.Type = NodeAddressType.RPC;
+                        dbNode.Height = newHeight;
+
+                        var newVersion = await _rPCNodeCaller.GetNodeVersion(dbNode);
+                        dbNode.Version = newVersion;
+
+                        await _locationCaller.UpdateNodeLocation(dbNode.Id);
+                        //var peers = await _rPCNodeCaller.GetNodePeers(dbNode);
+                        //if (peers != null)
+                        //{
+                        //    dbNode.Peers = peers.Connected.Count();
+                        //}
+                        
+                        if (string.IsNullOrEmpty(dbNode.Net))
+                        {
+                            dbNode.Net = _netsettings.Value.Net;
+                        }
+                        _ctx.Nodes.Update(dbNode);
+                        _ctx.SaveChanges();
                     }
-
-                    dbNode.Version = newVersion;
-                    dbNode.Height = newHeight;
-                    if (string.IsNullOrEmpty(dbNode.Net))
-                    {
-                        dbNode.Net = _netsettings.Value.Net;
-                    }
-                    _ctx.Nodes.Update(dbNode);
-                    await _ctx.SaveChangesAsync();
-
-                    //if (string.IsNullOrEmpty(dbNode.Version) ||
-                    //    dbNode.Type == NodeAddressType.RPC ||
-                    //    string.IsNullOrEmpty(dbNode.Protocol) ||
-                    //    dbNode.NodeAddresses.FirstOrDefault(na => na.Type == NodeAddressType.Default) != null)
-                    //{
-                    //    foreach (var address in dbNode.NodeAddresses)
-                    //    {
-                    //        if (address.Type == NodeAddressType.Default || !address.Port.HasValue)
-                    //        {
-                    //            var height = await _rPCNodeCaller.GetNodeHeight(address.Ip, address.Port);
-                    //            if (height > -1)
-                    //            {
-                    //                address.Type = NodeAddressType.RPC;
-                    //                dbNode.Type = NodeAddressType.RPC;
-                    //                dbNode.Height = height;
-                    //            }
-                    //        }
-                    //        if (string.IsNullOrEmpty(dbNode.Version))
-                    //        {
-                    //            if (!string.IsNullOrEmpty(dbNode.Protocol))
-                    //            {
-                    //                var version = await _rPCNodeCaller.GetNodeVersion($"{dbNode.Protocol}://{address.Ip}:{address.Port}");
-                    //                if (!string.IsNullOrEmpty(version))
-                    //                {
-                    //                    dbNode.Version = version;
-                    //                }
-                    //            }
-                    //            else
-                    //            {
-                    //                foreach (var protocol in RPCCallConstants.PROTOCOL_TYPES_TESTS)
-                    //                {
-                    //                    var version = await _rPCNodeCaller.GetNodeVersion($"{protocol}://{address.Ip}:{address.Port}");
-                    //                    if (!string.IsNullOrEmpty(version))
-                    //                    {
-                    //                        dbNode.Version = version;
-                    //                        break;
-                    //                    }
-                    //                }
-                    //            }
-                    //        }
-
-                    //        _ctx.NodeAddresses.Update(address);
-                    //        await _ctx.SaveChangesAsync();
-                    //    }
-
-                    //    _ctx.Nodes.Update(dbNode);
-                    //    await _ctx.SaveChangesAsync();
-                    //}
-
                 }
             }
+
+            UpdateDbCache();
         }
     }
 }
