@@ -13,6 +13,8 @@
         public int? Height { get; set; }
         public int? Peers { get; set; }
         public int? MemoryPool { get; set; }
+        public string FlagUrl { get; set; }
+        public string SuccessUrl { get; set; }
 
         public string Locale { get; set; }
         public string Location { get; set; }
@@ -22,5 +24,11 @@
         public bool IsVisited { get; set; }
 
         public string Net { get; set; }
+
+        public override int GetHashCode()
+        {
+            var hash = (Ip + Protocol + Port).GetHashCode();
+            return hash;
+        }
     }
 }
