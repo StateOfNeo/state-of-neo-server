@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StateOfNeo.Common;
 using StateOfNeo.Data.Models;
@@ -15,15 +16,41 @@ namespace StateOfNeo.Data.Seed
     public class StateOfNeoSeedData
     {
         private readonly StateOfNeoContext _ctx;
+        private readonly IOptions<NetSettings> _netSettings;
 
-        public StateOfNeoSeedData(StateOfNeoContext ctx)
+        public StateOfNeoSeedData(StateOfNeoContext ctx, IOptions<NetSettings> netSettings)
         {
             _ctx = ctx;
+            _netSettings = netSettings;
         }
 
         public void Init()
         {
+            SeedBlockchainInfo();
             SeedNodes();
+        }
+
+        private void SeedBlockchainInfo()
+        {
+            if (!_ctx.BlockchainInfos.Any())
+            {
+                var blockinfoTestnet = new BlockchainInfo
+                {
+                    BlockCount = 1537395,
+                    SecondsCount = 109616263,
+                    Net = NetConstants.TEST_NET
+                };
+
+                var blockinfoMainNet = new BlockchainInfo
+                {
+                    BlockCount = 2392397,
+                    SecondsCount = 44259344,
+                    Net = NetConstants.MAIN_NET
+                };
+                _ctx.BlockchainInfos.Add(blockinfoMainNet);
+                _ctx.BlockchainInfos.Add(blockinfoTestnet);
+                _ctx.SaveChanges();
+            }
         }
 
         private void SeedNodes()
@@ -32,24 +59,6 @@ namespace StateOfNeo.Data.Seed
             {
                 SeedNodesByNetType(NetConstants.MAIN_NET);
                 SeedNodesByNetType(NetConstants.TEST_NET);
-                //var mainNodes = ((JArray)JsonConvert.DeserializeObject(File.ReadAllText(@"seed-mainnet.json"))).ToObject<List<Node>>();
-                //foreach (var node in mainNodes)
-                //{
-
-                //    node.Id = 0;
-                //    node.Net = NetConstants.MAIN_NET;
-                //    _ctx.Nodes.Add(node);
-                //    _ctx.SaveChanges();
-                //}
-
-                //var testNodes = ((JArray)JsonConvert.DeserializeObject(File.ReadAllText(@"seed-testnet.json"))).ToObject<List<Node>>();
-                //foreach (var node in testNodes)
-                //{
-                //    node.Id = 0;
-                //    node.Net = NetConstants.TEST_NET;
-                //    _ctx.Nodes.Add(node);
-                //    _ctx.SaveChanges();
-                //}
             }
         }
 

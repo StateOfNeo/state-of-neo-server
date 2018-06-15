@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using StateOfNeo.Common;
 using StateOfNeo.Data;
 using StateOfNeo.Data.Models;
@@ -18,15 +19,21 @@ namespace StateOfNeo.Server.Infrastructure
         private NodeCache _nodeCache;
         private StateOfNeoContext _ctx;
         private RPCNodeCaller _rPCNodeCaller;
+        private readonly IOptions<NetSettings> _netsettings;
         private List<Node> CachedDbNodes;
 
-        public NodeSynchronizer(NodeCache nodeCache, StateOfNeoContext ctx, RPCNodeCaller rPCNodeCaller)
+        public NodeSynchronizer(NodeCache nodeCache,
+            StateOfNeoContext ctx,
+            RPCNodeCaller rPCNodeCaller,
+            IOptions<NetSettings> netsettings)
         {
             _nodeCache = nodeCache;
             _ctx = ctx;
             _rPCNodeCaller = rPCNodeCaller;
+            _netsettings = netsettings;
             CachedDbNodes = _ctx.Nodes
                 .Include(n => n.NodeAddresses)
+                .Where(n => n.Net.ToLower() == _netsettings.Value.Net.ToLower())
                 .ToList();
         }
 
@@ -47,6 +54,7 @@ namespace StateOfNeo.Server.Infrastructure
                 if (existingDbNode == null)
                 {
                     var newDbNode = Mapper.Map<Node>(cacheNode);
+                    newDbNode.Net = _netsettings.Value.Net;
                     _ctx.Nodes.Add(newDbNode);
                     await _ctx.SaveChangesAsync();
 
@@ -84,8 +92,10 @@ namespace StateOfNeo.Server.Infrastructure
         private async Task UpdateNodesInformation()
         {
             var dbNodes = _ctx.Nodes
-                  .Include(n => n.NodeAddresses)
-                  .ToList();
+                    .Include(n => n.NodeAddresses)
+                    .Where(n => n.Net.ToLower() == _netsettings.Value.Net.ToLower())
+                    //.Where(n => n.Id == 15)
+                    .ToList();
 
             foreach (var dbNode in dbNodes)
             {
@@ -101,6 +111,10 @@ namespace StateOfNeo.Server.Infrastructure
 
                     dbNode.Version = newVersion;
                     dbNode.Height = newHeight;
+                    if (string.IsNullOrEmpty(dbNode.Net))
+                    {
+                        dbNode.Net = _netsettings.Value.Net;
+                    }
                     _ctx.Nodes.Update(dbNode);
                     await _ctx.SaveChangesAsync();
 

@@ -9,6 +9,7 @@ using Neo.Core;
 using Neo.Implementations.Blockchains.LevelDB;
 using Neo.IO;
 using Neo.Network;
+using StateOfNeo.Common;
 using StateOfNeo.Data;
 using StateOfNeo.Data.Seed;
 using StateOfNeo.Infrastructure.Mapping;
@@ -46,6 +47,8 @@ namespace StateOfNeo.Server
         {
             //Automapper configuration initialization
             AutoMapperConfig.Init();
+
+            services.Configure<NetSettings>(Configuration.GetSection("NetSettings"));
 
             services.AddSingleton<NodeCache>();
             services.AddSingleton<NodeSynchronizer>();

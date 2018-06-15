@@ -1,12 +1,20 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Neo.Core;
 using StateOfNeo.Data.Seed;
+using StateOfNeo.Server.Infrastructure;
 using System.Collections.Generic;
 
 namespace StateOfNeo.Server.Controllers
 {
     public class ValuesController : BaseApiController
     {
+        private readonly NodeSynchronizer _nodeSynchronizer;
+
+        public ValuesController(NodeSynchronizer nodeSynchronizer)
+        {
+            _nodeSynchronizer = nodeSynchronizer;
+        }
+
         // GET api/values
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
@@ -24,8 +32,9 @@ namespace StateOfNeo.Server.Controllers
 
         // POST api/values
         [HttpPost]
-        public void Post([FromBody] string value)
+        public void Post()
         {
+            _nodeSynchronizer.Init().ConfigureAwait(false);
         }
 
         // PUT api/values/5

@@ -1,10 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using StateOfNeo.Common;
 using StateOfNeo.Common.RPC;
 using StateOfNeo.Data.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -15,31 +18,20 @@ namespace StateOfNeo.Server.Infrastructure
 {
     public class RPCNodeCaller
     {
-        public RPCNodeCaller()
-        {
+        private readonly NetSettings _netSettings;
 
+        public RPCNodeCaller(IOptions<NetSettings> netSettings)
+        {
+            _netSettings = netSettings.Value;
         }
 
-        public async Task<int> GetNodeHeight(Node node)
+        public async Task<int?> GetNodeHeight(Node node)
         {
-            var result = -1;
-            foreach (var defaultPort in RPCCallConstants.PORTS_TESTS)
+            int? result = null;
+            var httpResult = await MakeRPCCall<RPCResponseBody<int>>(node);
+            if (httpResult?.Result > 0)
             {
-                bool isSucessful = false;
-                foreach (var protocol in RPCCallConstants.PROTOCOL_TYPES_TESTS)
-                {
-                    var httpResult = await MakeRPCCall<RPCResponseBody<int>>(node);
-                    if (httpResult.Result > 0)
-                    {
-                        result = httpResult.Result;
-                        isSucessful = true;
-                        break;
-                    }
-                }
-                if (isSucessful)
-                {
-                    break;
-                }
+                result = httpResult.Result;
             }
             return result;
         }
@@ -50,7 +42,7 @@ namespace StateOfNeo.Server.Infrastructure
 
             if (port == null)
             {
-                foreach (var defaultPort in RPCCallConstants.PORTS_TESTS)
+                foreach (var defaultPort in _netSettings.GetPorts())
                 {
                     bool isSucessful = false;
                     foreach (var protocol in RPCCallConstants.PROTOCOL_TYPES_TESTS)
@@ -93,15 +85,15 @@ namespace StateOfNeo.Server.Infrastructure
 
         public async Task<string> GetNodeVersion(Node node)
         {
-            if (!string.IsNullOrEmpty(node.Version))
+            if (string.IsNullOrEmpty(node.Version))
             {
                 var result = await MakeRPCCall<RPCResponseBody<RPCResultGetVersion>>(node, "getversion");
-                if (result != null)
+                if (result?.Result != null)
                 {
                     return result.Result.Useragent;
                 }
             }
-            return string.Empty;
+            return node.Version;
         }
 
         private async Task<T> MakeRPCCall<T>(Node node, string method = "getblockcount")
@@ -124,67 +116,31 @@ namespace StateOfNeo.Server.Infrastructure
                     succesfulCall = true;
                 }
             }
-            else if (!string.IsNullOrEmpty(node.Protocol) &&
+            if (string.IsNullOrEmpty(successUrl))
+            {
+                if (!string.IsNullOrEmpty(node.Protocol) &&
                  !string.IsNullOrEmpty(node.Url))
-            {
-                foreach (var address in node.NodeAddresses)
-                {
-                    if (address.Port.HasValue)
-                    {
-                        url = $"{node.Protocol}://{node.Url}:{address.Port}";
-                        response = await SendRPCCall(HttpMethod.Post, url, rpcRequest);
-                        if (response.IsSuccessStatusCode)
-                        {
-                            node.Type = NodeAddressType.RPC;
-                            address.Type = NodeAddressType.RPC;
-                            successUrl = url;
-                            succesfulCall = true;
-                            break;
-                        }
-                    }
-                }
-                if (!succesfulCall)
-                {
-                    foreach (var port in RPCCallConstants.PORTS_TESTS)
-                    {
-                        url = $"{node.Protocol}://{node.Url}:{port}";
-                        response = await SendRPCCall(HttpMethod.Post, url, rpcRequest);
-                        if (response.IsSuccessStatusCode)
-                        {
-                            node.Type = NodeAddressType.RPC;
-                            successUrl = url;
-                            break;
-                        }
-                    }
-                }
-            }
-            else if (string.IsNullOrEmpty(node.Protocol) &&
-                !string.IsNullOrEmpty(node.Url))
-            {
-                if (node.Url.Contains(RPCCallConstants.PROTOCOL_TYPES_TESTS[0]) ||
-                    node.Url.Contains(RPCCallConstants.PROTOCOL_TYPES_TESTS[1]))
                 {
                     foreach (var address in node.NodeAddresses)
                     {
                         if (address.Port.HasValue)
                         {
-                            url = $"{node.Url}:{address.Port}";
+                            url = $"{node.Protocol}://{node.Url}:{address.Port}";
                             response = await SendRPCCall(HttpMethod.Post, url, rpcRequest);
                             if (response.IsSuccessStatusCode)
                             {
                                 node.Type = NodeAddressType.RPC;
                                 address.Type = NodeAddressType.RPC;
                                 successUrl = url;
-                                succesfulCall = true;
                                 break;
                             }
                         }
                     }
-                    if (!succesfulCall)
+                    if (string.IsNullOrEmpty(successUrl))
                     {
-                        foreach (var port in RPCCallConstants.PORTS_TESTS)
+                        foreach (var port in _netSettings.GetPorts())
                         {
-                            url = $"{node.Url}:{port}";
+                            url = $"{node.Protocol}://{node.Url}:{port}";
                             response = await SendRPCCall(HttpMethod.Post, url, rpcRequest);
                             if (response.IsSuccessStatusCode)
                             {
@@ -195,15 +151,20 @@ namespace StateOfNeo.Server.Infrastructure
                         }
                     }
                 }
-                else
+            }
+            if (string.IsNullOrEmpty(successUrl))
+            {
+                if (string.IsNullOrEmpty(node.Protocol) &&
+                !string.IsNullOrEmpty(node.Url))
                 {
-                    foreach (var address in node.NodeAddresses)
+                    if (node.Url.Contains(RPCCallConstants.PROTOCOL_TYPES_TESTS[0]) ||
+                        node.Url.Contains(RPCCallConstants.PROTOCOL_TYPES_TESTS[1]))
                     {
-                        if (address.Port.HasValue)
+                        foreach (var address in node.NodeAddresses)
                         {
-                            foreach (var protocol in RPCCallConstants.PROTOCOL_TYPES_TESTS)
+                            if (address.Port.HasValue)
                             {
-                                url = $"{protocol}://{node.Url}:{address.Port}";
+                                url = $"{node.Url}:{address.Port}";
                                 response = await SendRPCCall(HttpMethod.Post, url, rpcRequest);
                                 if (response.IsSuccessStatusCode)
                                 {
@@ -215,33 +176,69 @@ namespace StateOfNeo.Server.Infrastructure
                                 }
                             }
                         }
-                        if (succesfulCall) break;
-                    }
-                    if (!succesfulCall)
-                    {
-                        foreach (var port in RPCCallConstants.PORTS_TESTS)
+                        if (string.IsNullOrEmpty(successUrl))
                         {
-                            foreach (var protocol in RPCCallConstants.PROTOCOL_TYPES_TESTS)
+                            foreach (var port in _netSettings.GetPorts())
                             {
-                                url = $"{protocol}://{node.Url}:{port}";
+                                url = $"{node.Url}:{port}";
                                 response = await SendRPCCall(HttpMethod.Post, url, rpcRequest);
                                 if (response.IsSuccessStatusCode)
                                 {
                                     node.Type = NodeAddressType.RPC;
                                     successUrl = url;
-                                    succesfulCall = true;
                                     break;
                                 }
                             }
-                            if (succesfulCall)
+                        }
+                    }
+                    else
+                    {
+                        foreach (var address in node.NodeAddresses)
+                        {
+                            if (address.Port.HasValue)
                             {
-                                break;
+                                foreach (var protocol in RPCCallConstants.PROTOCOL_TYPES_TESTS)
+                                {
+                                    url = $"{protocol}://{node.Url}:{address.Port}";
+                                    response = await SendRPCCall(HttpMethod.Post, url, rpcRequest);
+                                    if (response.IsSuccessStatusCode)
+                                    {
+                                        node.Type = NodeAddressType.RPC;
+                                        address.Type = NodeAddressType.RPC;
+                                        successUrl = url;
+                                        succesfulCall = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (succesfulCall) break;
+                        }
+                        if (string.IsNullOrEmpty(successUrl))
+                        {
+                            foreach (var port in _netSettings.GetPorts())
+                            {
+                                foreach (var protocol in RPCCallConstants.PROTOCOL_TYPES_TESTS)
+                                {
+                                    url = $"{protocol}://{node.Url}:{port}";
+                                    response = await SendRPCCall(HttpMethod.Post, url, rpcRequest);
+                                    if (response.IsSuccessStatusCode)
+                                    {
+                                        node.Type = NodeAddressType.RPC;
+                                        successUrl = url;
+                                        succesfulCall = true;
+                                        break;
+                                    }
+                                }
+                                if (succesfulCall)
+                                {
+                                    break;
+                                }
                             }
                         }
                     }
                 }
             }
-            else
+            if (string.IsNullOrEmpty(successUrl))
             {
                 foreach (var address in node.NodeAddresses)
                 {
@@ -263,7 +260,7 @@ namespace StateOfNeo.Server.Infrastructure
                     }
                     else
                     {
-                        foreach (var port in RPCCallConstants.PORTS_TESTS)
+                        foreach (var port in _netSettings.GetPorts())
                         {
                             foreach (var protocol in RPCCallConstants.PROTOCOL_TYPES_TESTS)
                             {
@@ -286,13 +283,10 @@ namespace StateOfNeo.Server.Infrastructure
                     }
                 }
             }
-            if (string.IsNullOrEmpty(node.SuccessUrl))
+
+            if (!string.IsNullOrEmpty(successUrl))
             {
                 node.SuccessUrl = successUrl;
-            }
-
-            if (succesfulCall)
-            {
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadAsStringAsync();
@@ -322,32 +316,28 @@ namespace StateOfNeo.Server.Infrastructure
         private async Task<HttpResponseMessage> SendRPCCall(HttpMethod httpMethod, string endpoint, object rpcData)
         {
             HttpResponseMessage response;
+            var stopwatch = Stopwatch.StartNew();
             try
             {
-                var httpHandler = new HttpClientHandler();
-                httpHandler.ClientCertificateOptions = ClientCertificateOption.Manual;
-                httpHandler.SslProtocols = SslProtocols.Tls12;
-                httpHandler.ClientCertificates.Add(new X509Certificate());
                 using (var http = new HttpClient())
                 {
                     var req = new HttpRequestMessage(httpMethod, $"{endpoint}");
-
                     var data = JsonConvert.SerializeObject(rpcData, new JsonSerializerSettings
                     {
                         NullValueHandling = NullValueHandling.Ignore,
                         DefaultValueHandling = DefaultValueHandling.Ignore
                     });
-
-
-                    req.Content = new StringContent(data, Encoding.Default, "application/json");
                     response = await http.SendAsync(req);
+                    //http.Timeout = TimeSpan.FromSeconds(3);
+                    req.Content = new StringContent(data, Encoding.Default, "application/json");
                 }
             }
             catch (Exception e)
             {
-                return null;
+                response = new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
 
+            stopwatch.Stop();
             return response;
         }
     }
