@@ -9,17 +9,20 @@ namespace StateOfNeo.Server.Cache
     {
         private readonly StateOfNeoContext _ctx;
 
-        public List<NodeViewModel> NodeList { get; private set; }
+        public HashSet<NodeViewModel> NodeList { get; private set; }
 
         public NodeCache(StateOfNeoContext ctx)
         {
             _ctx = ctx;
-            NodeList = new List<NodeViewModel>();
+            NodeList = new HashSet<NodeViewModel>();
         }
 
         public void Update(IEnumerable<NodeViewModel> nodeViewModels)
         {
-            NodeList.AddRange(nodeViewModels.ToList());
+            foreach (var node in nodeViewModels)
+            {
+                NodeList.Add(node);
+            }
         }
     }
 }

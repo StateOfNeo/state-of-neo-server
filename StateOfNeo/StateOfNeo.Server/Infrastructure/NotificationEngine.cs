@@ -11,23 +11,31 @@ using System;
 using StateOfNeo.Data;
 using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
+using Neo;
+using Neo.Implementations.Blockchains.LevelDB;
+using AutoMapper.QueryableExtensions;
 
 namespace StateOfNeo.Server.Infrastructure
 {
     public class NotificationEngine
     {
         private int NeoBlocksWithoutNodesUpdate = 0;
+        private ulong TotalTransactionCount = 0;
         private DateTime LastBlockReceiveTime;
         private readonly StateOfNeoContext _ctx;
         private readonly IHubContext<NodeHub> _nodeHub;
         private readonly IHubContext<BlockHub> blockHub;
         private readonly NodeCache _nodeCache;
+        private readonly IHubContext<TransactionCountHub> _transCountHub;
+        private readonly IHubContext<TransactionAverageCountHub> _transAvgCountHub;
         private readonly NodeSynchronizer _nodeSynchronizer;
         private readonly RPCNodeCaller _rPCNodeCaller;
         private readonly NetSettings _netSettings;
 
         public NotificationEngine(IHubContext<NodeHub> nodeHub,
             IHubContext<BlockHub> blockHub,
+            IHubContext<TransactionCountHub> transCountHub,
+            IHubContext<TransactionAverageCountHub> transAvgCountHub,
             NodeCache nodeCache,
             NodeSynchronizer nodeSynchronizer,
             RPCNodeCaller rPCNodeCaller,
@@ -37,6 +45,8 @@ namespace StateOfNeo.Server.Infrastructure
             _ctx = ctx;
             _nodeHub = nodeHub;
             _nodeCache = nodeCache;
+            _transCountHub = transCountHub;
+            _transAvgCountHub = transAvgCountHub;
             _nodeSynchronizer = nodeSynchronizer;
             _rPCNodeCaller = rPCNodeCaller;
             _netSettings = netSettings.Value;
@@ -50,23 +60,35 @@ namespace StateOfNeo.Server.Infrastructure
 
         private async void UpdateBlockCount_Completed(object sender, Block e)
         {
+            if (TotalTransactionCount == 0)
+            {
+                GetTotalTransactionCount(e, ref TotalTransactionCount);
+            }
+            else
+            {
+                TotalTransactionCount += (ulong)e.Transactions.Length;
+            }
+            await _transCountHub.Clients.All.SendAsync("Receive", TotalTransactionCount);
+            await _transAvgCountHub.Clients.All.SendAsync("Receive", (double)TotalTransactionCount / (double)e.Header.Index);
+
             await this.blockHub.Clients.All.SendAsync("Receive", e.Header.Index);
             ulong secondsElapsed = 20;
             if (LastBlockReceiveTime != default(DateTime))
             {
-                secondsElapsed = (ulong)(DateTime.UtcNow - LastBlockReceiveTime).TotalSeconds; //DateTime.UtcNow.Subtract(LastBlockReceiveTime).TotalSeconds;
+                secondsElapsed = (ulong)(DateTime.UtcNow - LastBlockReceiveTime).TotalSeconds;
             }
             //var averageSeconds = await GetAverageBlockTime(secondsElapsed);
             //await this.blockHub.Clients.All.SendAsync("Receive", averageSeconds);
 
-            var average = Blockchain.SecondsPerBlock;
+            //var average = Blockchain.GenesisBlock.get.Transactions.SecondsPerBlock;
 
             if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP < NeoBlocksWithoutNodesUpdate)
             {
-                _nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
+                //_nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
+                //await _nodeHub.Clients.All.SendAsync("Receive", _nodeSynchronizer.GetCachedNodesAs<NodeViewModel>());
                 //_nodeSynchronizer.Init().ConfigureAwait(false);
                 NeoBlocksWithoutNodesUpdate = 0;
-                _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList).ConfigureAwait(false);
+                await _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList);
             }
 
             LastBlockReceiveTime = DateTime.UtcNow;
@@ -82,6 +104,16 @@ namespace StateOfNeo.Server.Infrastructure
             await _ctx.SaveChangesAsync();
 
             return blockInfo.AverageBlockTime;
+        }
+
+        private void GetTotalTransactionCount(Block block, ref ulong totalTransactions)
+        {
+            var height = Blockchain.Default.Height;
+            for (uint i = 0; i < height; i++)
+            {
+                var hBlock = Startup.BlockChain.GetBlock(height - i);
+                totalTransactions += (uint)hBlock.Transactions.Length;
+            }
         }
     }
 }

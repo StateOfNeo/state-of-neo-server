@@ -16,6 +16,7 @@ namespace StateOfNeo.Server
     {
         public static void Main(string[] args)
         {
+            //CreateWebHostBuilder(args).Build().Run();
             var config = new ConfigurationBuilder()
                .SetBasePath(Directory.GetCurrentDirectory())
                .AddEnvironmentVariables()

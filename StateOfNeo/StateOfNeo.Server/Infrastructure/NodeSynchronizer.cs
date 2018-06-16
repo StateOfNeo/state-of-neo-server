@@ -21,7 +21,7 @@ namespace StateOfNeo.Server.Infrastructure
         private RPCNodeCaller _rPCNodeCaller;
         private LocationCaller _locationCaller;
         private readonly IOptions<NetSettings> _netsettings;
-        private List<Node> CachedDbNodes;
+        public List<Node> CachedDbNodes;
 
         public NodeSynchronizer(NodeCache nodeCache,
             StateOfNeoContext ctx,
@@ -35,6 +35,11 @@ namespace StateOfNeo.Server.Infrastructure
             _locationCaller = locationCaller;
             _netsettings = netsettings;
             UpdateDbCache();
+        }
+
+        public IEnumerable<T> GetCachedNodesAs<T>()
+        {
+            return CachedDbNodes.AsQueryable().ProjectTo<T>();
         }
 
         private void UpdateDbCache()

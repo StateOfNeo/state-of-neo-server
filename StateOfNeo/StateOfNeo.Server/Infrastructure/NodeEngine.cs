@@ -24,24 +24,7 @@ namespace StateOfNeo.Server.Infrastructure
 
             //var privateNode = node.GetFieldValue<LocalNode>("localNode");
             var privateNode = ObjectExtensions.GetInstanceField<LocalNode>(typeof(RemoteNode), node, "localNode");
-
-            //var unconnectedPeers = privateNode.GetUnconnectedPeers();
-            //foreach (var unconnectedPeer in unconnectedPeers)
-            //{
-            //    if (nodeViewModels.FirstOrDefault(
-            //            n => n.Ip == unconnectedPeer.ToString().ToMatchedIp() &&
-            //            n.Port == unconnectedPeer.Port) == null)
-            //    {
-            //        var unconnectedNode = new NodeViewModel
-            //        {
-            //            Ip = unconnectedPeer.Address.ToString().ToMatchedIp(),
-            //            Port = (uint)unconnectedPeer.Port
-            //        };
-
-            //        nodeViewModels.Add(unconnectedNode);
-            //    }
-            //}
-
+            
             if ((existingNode == null || !existingNode.IsVisited) && node.Version != null)
             {
                 newNode = new NodeViewModel

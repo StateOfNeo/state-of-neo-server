@@ -24,6 +24,8 @@ namespace StateOfNeo.Server
 {
     public class Startup
     {
+        public static Blockchain BlockChain { get; private set; }
+
         public static LocalNode localNode;
 
         public Startup(IHostingEnvironment env)
@@ -52,7 +54,7 @@ namespace StateOfNeo.Server
 
             services.AddSingleton<NodeCache>();
             services.AddSingleton<NodeSynchronizer>();
-            services.AddSingleton<RPCNodeCaller>(); 
+            services.AddSingleton<RPCNodeCaller>();
             services.AddSingleton<LocationCaller>();
 
             services.AddDbContext<StateOfNeoContext>(options =>
@@ -105,7 +107,9 @@ namespace StateOfNeo.Server
             app.UseSignalR(routes =>
             {
                 routes.MapHub<BlockHub>("/hubs/block");
-                routes.MapHub<NodeHub>("/hubs/node");
+                routes.MapHub<NodeHub>("/hubs/node"); 
+                routes.MapHub<TransactionCountHub>("/hubs/trans-count"); 
+                routes.MapHub<TransactionAverageCountHub>("/hubs/trans-average-count");
             });
 
             //app.UseHttpsRedirection();
@@ -118,7 +122,7 @@ namespace StateOfNeo.Server
 
         public void StartBlockchain()
         {
-            Neo.Core.Blockchain.RegisterBlockchain(new LevelDBBlockchain(NeoSettings.Default.DataDirectoryPath));
+            BlockChain = Neo.Core.Blockchain.RegisterBlockchain(new LevelDBBlockchain(NeoSettings.Default.DataDirectoryPath));
 
             localNode = new LocalNode();
             Task.Run(() =>
