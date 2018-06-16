@@ -77,9 +77,10 @@ namespace StateOfNeo.Server.Infrastructure
 
             if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP < NeoBlocksWithoutNodesUpdate)
             {
-                _nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
                 NeoBlocksWithoutNodesUpdate = 0;
-                await _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList);
+                var nodes = this._nodeSynchronizer.GetCachedNodesAs<NodeViewModel>();
+                await _nodeHub.Clients.All.SendAsync("Receive", nodes);
+                this._nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
             }
 
             LastBlockReceiveTime = DateTime.UtcNow;

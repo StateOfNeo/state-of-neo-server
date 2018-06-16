@@ -11,6 +11,8 @@ namespace StateOfNeo.Server.Cache
 
         public HashSet<NodeViewModel> NodeList { get; private set; }
 
+        public IEnumerable<NodeViewModel> RpcEnabled => this.NodeList.Where(x => x.Type == "RPC").ToList();
+
         public NodeCache(StateOfNeoContext ctx)
         {
             _ctx = ctx;

@@ -47,6 +47,7 @@ namespace StateOfNeo.Server.Infrastructure
             CachedDbNodes = _ctx.Nodes
                 .Include(n => n.NodeAddresses)
                 .Where(n => n.Net.ToLower() == _netsettings.Value.Net.ToLower())
+                .Where(x => x.Type == NodeAddressType.RPC && string.IsNullOrEmpty(x.SuccessUrl) == false)
                 .ToList();
         }
 
@@ -54,7 +55,7 @@ namespace StateOfNeo.Server.Infrastructure
         {
             await SyncCacheAndDb();
             await UpdateNodesInformation();
-            _nodeCache.NodeList.Clear();
+            this._nodeCache.NodeList.Clear();
         }
 
         private async Task SyncCacheAndDb()
