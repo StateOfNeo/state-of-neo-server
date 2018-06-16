@@ -47,9 +47,7 @@ namespace StateOfNeo.Server.Infrastructure
         public static List<NodeViewModel> GetNodesByBFSAlgo()
         {
             var result = new List<NodeViewModel>();
-            var badpeers = Startup.localNode.GetBadPeers();
             var nodes = Startup.localNode.GetRemoteNodes();
-            var unconnected = Startup.localNode.GetUnconnectedPeers();
             foreach (var node in nodes)
             {
                 BFSNodes(node, ref result);

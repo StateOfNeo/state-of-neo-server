@@ -47,7 +47,7 @@ namespace StateOfNeo.Server.Infrastructure
             CachedDbNodes = _ctx.Nodes
                 .Include(n => n.NodeAddresses)
                 .Where(n => n.Net.ToLower() == _netsettings.Value.Net.ToLower())
-                .Where(x => x.Type == NodeAddressType.RPC)
+                .Where(x => x.Type == NodeAddressType.RPC && string.IsNullOrEmpty(x.SuccessUrl) == false)
                 .ToList();
         }
 
