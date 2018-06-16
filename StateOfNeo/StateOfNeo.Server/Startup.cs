@@ -71,8 +71,8 @@ namespace StateOfNeo.Server
             services.AddSignalR();
             services.AddMvc(options =>
             {
-                options.SslPort = 5001;
-                options.Filters.Add(new RequireHttpsAttribute());
+                //options.SslPort = 5001;
+                //options.Filters.Add(new RequireHttpsAttribute());
             })
             .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }

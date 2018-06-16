@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Neo;
 using Neo.Implementations.Blockchains.LevelDB;
 using AutoMapper.QueryableExtensions;
+using StateOfNeo.Data.Models;
 
 namespace StateOfNeo.Server.Infrastructure
 {
@@ -21,7 +22,7 @@ namespace StateOfNeo.Server.Infrastructure
     {
         private int NeoBlocksWithoutNodesUpdate = 0;
         private ulong TotalTransactionCount = 0;
-        private DateTime LastBlockReceiveTime;
+        private DateTime LastBlockReceiveTime = default(DateTime);
         private readonly StateOfNeoContext _ctx;
         private readonly IHubContext<NodeHub> _nodeHub;
         private readonly IHubContext<BlockHub> blockHub;
@@ -60,16 +61,12 @@ namespace StateOfNeo.Server.Infrastructure
 
         private async void UpdateBlockCount_Completed(object sender, Block e)
         {
-            if (TotalTransactionCount == 0)
-            {
-                GetTotalTransactionCount(e, ref TotalTransactionCount);
-            }
-            else
-            {
-                TotalTransactionCount += (ulong)e.Transactions.Length;
-            }
-            await _transCountHub.Clients.All.SendAsync("Receive", TotalTransactionCount);
-            await _transAvgCountHub.Clients.All.SendAsync("Receive", (double)TotalTransactionCount / (double)e.Header.Index);
+            //UpdateBlockInfoDB(e.Header.Index);
+            var blockInfo = UpdateBlockInfo(e);
+            var totalTransactionsCount = GetTotalTransactionCount();
+            await _transCountHub.Clients.All.SendAsync("Receive", totalTransactionsCount);
+            var avgTransCount = GetAverageTransactionCount();
+            await _transAvgCountHub.Clients.All.SendAsync("Receive", avgTransCount);
 
             await this.blockHub.Clients.All.SendAsync("Receive", e.Header.Index);
             ulong secondsElapsed = 20;
@@ -77,16 +74,10 @@ namespace StateOfNeo.Server.Infrastructure
             {
                 secondsElapsed = (ulong)(DateTime.UtcNow - LastBlockReceiveTime).TotalSeconds;
             }
-            //var averageSeconds = await GetAverageBlockTime(secondsElapsed);
-            //await this.blockHub.Clients.All.SendAsync("Receive", averageSeconds);
-
-            //var average = Blockchain.GenesisBlock.get.Transactions.SecondsPerBlock;
 
             if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP < NeoBlocksWithoutNodesUpdate)
             {
-                //_nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
-                //await _nodeHub.Clients.All.SendAsync("Receive", _nodeSynchronizer.GetCachedNodesAs<NodeViewModel>());
-                //_nodeSynchronizer.Init().ConfigureAwait(false);
+                _nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
                 NeoBlocksWithoutNodesUpdate = 0;
                 await _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList);
             }
@@ -95,25 +86,79 @@ namespace StateOfNeo.Server.Infrastructure
             NeoBlocksWithoutNodesUpdate++;
         }
 
-        private async Task<decimal> GetAverageBlockTime(ulong secondsElapsed)
+        public void UpdateBlockInfoDB(uint startHeight)
         {
-            var blockInfo = _ctx.BlockchainInfos.First(bi => bi.Net == _netSettings.Net);
-            blockInfo.BlockCount++;
-            blockInfo.SecondsCount += secondsElapsed;
-            _ctx.BlockchainInfos.Update(blockInfo);
-            await _ctx.SaveChangesAsync();
-
-            return blockInfo.AverageBlockTime;
+            for (uint i = startHeight; i > 0; i--)
+            {
+                var newBLock = Startup.BlockChain.GetBlock(i);
+                UpdateBlockInfo(newBLock);
+            }
         }
 
-        private void GetTotalTransactionCount(Block block, ref ulong totalTransactions)
+        private BaseBlockInfo UpdateBlockInfo(Block block)
         {
-            var height = Blockchain.Default.Height;
-            for (uint i = 0; i < height; i++)
+            var txsysfee = (int)block.Transactions.Select(t => t.SystemFee).Sum();
+            var txnetfee = (int)Block.CalculateNetFee(block.Transactions);
+            var txoutvalues = (int)block.Transactions.Select(t => t.Outputs.Select(o => o.Value)).SelectMany(x => x).Sum();
+            BaseBlockInfo newBlockInfo = null;
+
+            if (_netSettings.Net == NetConstants.MAIN_NET)
             {
-                var hBlock = Startup.BlockChain.GetBlock(height - i);
-                totalTransactions += (uint)hBlock.Transactions.Length;
+                var info = _ctx.MainNetBlockInfos.FirstOrDefault(x => x.BlockHeight == block.Header.Index);
+                if (info == null)
+                {
+                    var dbInfo = new MainNetBlockInfo
+                    {
+                        BlockHeight = block.Header.Index,
+                        SecondsCount = LastBlockReceiveTime == default(DateTime) ? 20 : (int)(DateTime.UtcNow - LastBlockReceiveTime).TotalSeconds,
+                        TxCount = block.Transactions.Length,
+                        TxSystemFees = txsysfee,
+                        TxNetworkFees = txnetfee,
+                        TxOutputValues = txoutvalues
+                    };
+                    _ctx.MainNetBlockInfos.Add(dbInfo);
+                    _ctx.SaveChanges();
+                    newBlockInfo = dbInfo;
+                }
             }
+            else
+            {
+                var info = _ctx.TestNetBlockInfos.FirstOrDefault(x => x.BlockHeight == block.Header.Index);
+                if (info == null)
+                {
+                    var dbInfo = new TestNetBlockInfo
+                    {
+                        BlockHeight = block.Header.Index,
+                        SecondsCount = (int)(DateTime.UtcNow - LastBlockReceiveTime).TotalSeconds,
+                        TxCount = block.Transactions.Length,
+                        TxSystemFees = txsysfee,
+                        TxNetworkFees = txnetfee,
+                        TxOutputValues = txoutvalues
+                    };
+                    _ctx.TestNetBlockInfos.Add(dbInfo);
+                    _ctx.SaveChanges();
+                    newBlockInfo = dbInfo;
+                }
+            }
+            return newBlockInfo;
+        }
+
+        private long GetTotalTransactionCount()
+        {
+            if (_netSettings.Net == NetConstants.MAIN_NET)
+            {
+                return _ctx.MainNetBlockInfos.Sum(x => x.TxCount);
+            }
+            return _ctx.TestNetBlockInfos.Sum(x => x.TxCount);
+        }
+
+        private decimal GetAverageTransactionCount()
+        {
+            if (_netSettings.Net == NetConstants.MAIN_NET)
+            {
+                return (decimal)GetTotalTransactionCount() / (decimal)_ctx.MainNetBlockInfos.OrderByDescending(x => x.BlockHeight).First().BlockHeight;
+            }
+            return (decimal)GetTotalTransactionCount() / (decimal)_ctx.TestNetBlockInfos.OrderByDescending(x => x.BlockHeight).First().BlockHeight;
         }
     }
 }

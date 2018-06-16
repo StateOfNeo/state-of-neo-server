@@ -54,7 +54,7 @@ namespace StateOfNeo.Server.Infrastructure
         {
             await SyncCacheAndDb();
             await UpdateNodesInformation();
-            _nodeCache.Update(CachedDbNodes.AsQueryable().ProjectTo<NodeViewModel>());
+            _nodeCache.NodeList.Clear();
         }
 
         private async Task SyncCacheAndDb()
@@ -108,7 +108,6 @@ namespace StateOfNeo.Server.Infrastructure
             var dbNodes = _ctx.Nodes
                     .Include(n => n.NodeAddresses)
                     .Where(n => n.Net.ToLower() == _netsettings.Value.Net.ToLower())
-                    .Where(n => n.Id == 138 || n.Id == 199)
                     .ToList();
 
             foreach (var dbNode in dbNodes)

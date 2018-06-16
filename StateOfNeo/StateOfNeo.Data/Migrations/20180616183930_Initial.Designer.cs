@@ -10,8 +10,8 @@ using StateOfNeo.Data;
 namespace StateOfNeo.Data.Migrations
 {
     [DbContext(typeof(StateOfNeoContext))]
-    [Migration("20180615062531_BlockchainInfoTableAdded")]
-    partial class BlockchainInfoTableAdded
+    [Migration("20180616183930_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -29,6 +29,8 @@ namespace StateOfNeo.Data.Migrations
 
                     b.Property<long>("BlockCount");
 
+                    b.Property<string>("Net");
+
                     b.Property<decimal>("SecondsCount")
                         .HasConversion(new ValueConverter<decimal, decimal>(v => default(decimal), v => default(decimal), new ConverterMappingHints(precision: 20, scale: 0)));
 
@@ -37,11 +39,37 @@ namespace StateOfNeo.Data.Migrations
                     b.ToTable("BlockchainInfos");
                 });
 
+            modelBuilder.Entity("StateOfNeo.Data.Models.MainNetBlockInfo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<decimal>("BlockHeight")
+                        .HasConversion(new ValueConverter<decimal, decimal>(v => default(decimal), v => default(decimal), new ConverterMappingHints(precision: 20, scale: 0)));
+
+                    b.Property<int>("SecondsCount");
+
+                    b.Property<long>("TxCount");
+
+                    b.Property<long>("TxNetworkFees");
+
+                    b.Property<long>("TxOutputValues");
+
+                    b.Property<long>("TxSystemFees");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MainNetBlockInfos");
+                });
+
             modelBuilder.Entity("StateOfNeo.Data.Models.Node", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("FlagUrl");
 
                     b.Property<int?>("Height");
 
@@ -93,6 +121,30 @@ namespace StateOfNeo.Data.Migrations
                     b.HasIndex("NodeId");
 
                     b.ToTable("NodeAddresses");
+                });
+
+            modelBuilder.Entity("StateOfNeo.Data.Models.TestNetBlockInfo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<decimal>("BlockHeight")
+                        .HasConversion(new ValueConverter<decimal, decimal>(v => default(decimal), v => default(decimal), new ConverterMappingHints(precision: 20, scale: 0)));
+
+                    b.Property<int>("SecondsCount");
+
+                    b.Property<long>("TxCount");
+
+                    b.Property<long>("TxNetworkFees");
+
+                    b.Property<long>("TxOutputValues");
+
+                    b.Property<long>("TxSystemFees");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TestNetBlockInfos");
                 });
 
             modelBuilder.Entity("StateOfNeo.Data.Models.TimeEvent", b =>

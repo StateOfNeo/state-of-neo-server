@@ -26,31 +26,7 @@ namespace StateOfNeo.Data.Seed
 
         public void Init()
         {
-            SeedBlockchainInfo();
             SeedNodes();
-        }
-
-        private void SeedBlockchainInfo()
-        {
-            if (!_ctx.BlockchainInfos.Any())
-            {
-                var blockinfoTestnet = new BlockchainInfo
-                {
-                    BlockCount = 1537395,
-                    SecondsCount = 109616263,
-                    Net = NetConstants.TEST_NET
-                };
-
-                var blockinfoMainNet = new BlockchainInfo
-                {
-                    BlockCount = 2392397,
-                    SecondsCount = 44259344,
-                    Net = NetConstants.MAIN_NET
-                };
-                _ctx.BlockchainInfos.Add(blockinfoMainNet);
-                _ctx.BlockchainInfos.Add(blockinfoTestnet);
-                _ctx.SaveChanges();
-            }
         }
 
         private void SeedNodes()
