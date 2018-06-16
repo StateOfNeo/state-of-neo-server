@@ -60,16 +60,16 @@ namespace StateOfNeo.Server.Infrastructure
 
         private async void UpdateBlockCount_Completed(object sender, Block e)
         {
-            if (TotalTransactionCount == 0)
-            {
-                GetTotalTransactionCount(e, ref TotalTransactionCount);
-            }
-            else
-            {
-                TotalTransactionCount += (ulong)e.Transactions.Length;
-            }
-            await _transCountHub.Clients.All.SendAsync("Receive", TotalTransactionCount);
-            await _transAvgCountHub.Clients.All.SendAsync("Receive", (double)TotalTransactionCount / (double)e.Header.Index);
+            //if (TotalTransactionCount == 0)
+            //{
+            //    GetTotalTransactionCount(e, ref TotalTransactionCount);
+            //}
+            //else
+            //{
+            //    TotalTransactionCount += (ulong)e.Transactions.Length;
+            //}
+            //await _transCountHub.Clients.All.SendAsync("Receive", TotalTransactionCount);
+            //await _transAvgCountHub.Clients.All.SendAsync("Receive", (double)TotalTransactionCount / (double)e.Header.Index);
 
             await this.blockHub.Clients.All.SendAsync("Receive", e.Header.Index);
             ulong secondsElapsed = 20;
@@ -77,18 +77,13 @@ namespace StateOfNeo.Server.Infrastructure
             {
                 secondsElapsed = (ulong)(DateTime.UtcNow - LastBlockReceiveTime).TotalSeconds;
             }
-            //var averageSeconds = await GetAverageBlockTime(secondsElapsed);
-            //await this.blockHub.Clients.All.SendAsync("Receive", averageSeconds);
-
-            //var average = Blockchain.GenesisBlock.get.Transactions.SecondsPerBlock;
 
             if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP < NeoBlocksWithoutNodesUpdate)
             {
-                //_nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
-                //await _nodeHub.Clients.All.SendAsync("Receive", _nodeSynchronizer.GetCachedNodesAs<NodeViewModel>());
-                //_nodeSynchronizer.Init().ConfigureAwait(false);
                 NeoBlocksWithoutNodesUpdate = 0;
-                await _nodeHub.Clients.All.SendAsync("Receive", _nodeCache.NodeList);
+                var nodes = this._nodeSynchronizer.GetCachedNodesAs<NodeViewModel>();
+                await _nodeHub.Clients.All.SendAsync("Receive", nodes);
+                this._nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
             }
 
             LastBlockReceiveTime = DateTime.UtcNow;
@@ -109,7 +104,8 @@ namespace StateOfNeo.Server.Infrastructure
         private void GetTotalTransactionCount(Block block, ref ulong totalTransactions)
         {
             var height = Blockchain.Default.Height;
-            for (uint i = 0; i < height; i++)
+            var firstBlock = height < 50000 ? 0 : height - 50000;
+            for (uint i = firstBlock; i < height; i++)
             {
                 var hBlock = Startup.BlockChain.GetBlock(height - i);
                 totalTransactions += (uint)hBlock.Transactions.Length;
