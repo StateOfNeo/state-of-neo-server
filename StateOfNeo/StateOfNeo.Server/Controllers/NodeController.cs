@@ -4,6 +4,7 @@ using StateOfNeo.Server.Cache;
 using StateOfNeo.Server.Hubs;
 using StateOfNeo.Server.Infrastructure;
 using StateOfNeo.ViewModels;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace StateOfNeo.Server.Controllers
@@ -21,10 +22,18 @@ namespace StateOfNeo.Server.Controllers
             this.nodeSynchronizer = nodeSynchronizer;
         }
 
-        [HttpPost]
-        public async Task Post()
+        [HttpGet]
+        public async Task<IActionResult> Get()
         {
-            await _nodeHub.Clients.All.SendAsync("Receive", this.nodeSynchronizer.GetCachedNodesAs<NodeViewModel>());
+            try
+            {
+                var nodes = this.nodeSynchronizer.GetCachedNodesAs<NodeViewModel>().ToList();
+                return Ok(nodes);
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

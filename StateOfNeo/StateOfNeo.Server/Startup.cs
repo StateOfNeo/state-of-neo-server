@@ -55,6 +55,7 @@ namespace StateOfNeo.Server
             services.AddSingleton<NodeCache>();
             services.AddSingleton<NodeSynchronizer>();
             services.AddSingleton<RPCNodeCaller>();
+            services.AddSingleton<PeersEngine>();
             services.AddSingleton<LocationCaller>();
 
             services.AddDbContext<StateOfNeoContext>(options =>
@@ -107,9 +108,10 @@ namespace StateOfNeo.Server
             app.UseSignalR(routes =>
             {
                 routes.MapHub<BlockHub>("/hubs/block");
-                routes.MapHub<NodeHub>("/hubs/node"); 
-                routes.MapHub<TransactionCountHub>("/hubs/trans-count"); 
-                routes.MapHub<TransactionAverageCountHub>("/hubs/trans-average-count");
+                routes.MapHub<NodeHub>("/hubs/node");
+                routes.MapHub<TransactionCountHub>("/hubs/trans-count");
+                routes.MapHub<TransactionAverageCountHub>("/hubs/trans-average-count"); 
+                routes.MapHub<FailedP2PHub>("/hubs/fail-p2p"); 
             });
 
             //app.UseHttpsRedirection();

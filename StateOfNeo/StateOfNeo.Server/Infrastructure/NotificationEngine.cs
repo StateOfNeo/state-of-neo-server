@@ -20,6 +20,7 @@ namespace StateOfNeo.Server.Infrastructure
 {
     public class NotificationEngine
     {
+        private bool IsInitialBlockConnection = false;
         private int NeoBlocksWithoutNodesUpdate = 0;
         private ulong TotalTransactionCount = 0;
         private DateTime LastBlockReceiveTime = default(DateTime);
@@ -28,16 +29,20 @@ namespace StateOfNeo.Server.Infrastructure
         private readonly IHubContext<BlockHub> blockHub;
         private readonly NodeCache _nodeCache;
         private readonly IHubContext<TransactionCountHub> _transCountHub;
+        private readonly IHubContext<FailedP2PHub> _failP2PHub;
         private readonly IHubContext<TransactionAverageCountHub> _transAvgCountHub;
         private readonly NodeSynchronizer _nodeSynchronizer;
         private readonly RPCNodeCaller _rPCNodeCaller;
         private readonly NetSettings _netSettings;
+        private readonly PeersEngine _peersEngine;
 
         public NotificationEngine(IHubContext<NodeHub> nodeHub,
             IHubContext<BlockHub> blockHub,
             IHubContext<TransactionCountHub> transCountHub,
             IHubContext<TransactionAverageCountHub> transAvgCountHub,
+            IHubContext<FailedP2PHub> failP2PHub,
             NodeCache nodeCache,
+            PeersEngine peersEngine,
             NodeSynchronizer nodeSynchronizer,
             RPCNodeCaller rPCNodeCaller,
             StateOfNeoContext ctx,
@@ -47,10 +52,12 @@ namespace StateOfNeo.Server.Infrastructure
             _nodeHub = nodeHub;
             _nodeCache = nodeCache;
             _transCountHub = transCountHub;
+            _failP2PHub = failP2PHub;
             _transAvgCountHub = transAvgCountHub;
             _nodeSynchronizer = nodeSynchronizer;
             _rPCNodeCaller = rPCNodeCaller;
             _netSettings = netSettings.Value;
+            _peersEngine = peersEngine;
             this.blockHub = blockHub;
         }
 
@@ -74,8 +81,8 @@ namespace StateOfNeo.Server.Infrastructure
             {
                 secondsElapsed = (ulong)(DateTime.UtcNow - LastBlockReceiveTime).TotalSeconds;
             }
-
-            if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP < NeoBlocksWithoutNodesUpdate)
+            
+            if (NotificationConstants.DEFAULT_NEO_BLOCKS_STEP < NeoBlocksWithoutNodesUpdate || IsInitialBlockConnection)
             {
                 NeoBlocksWithoutNodesUpdate = 0;
                 var nodes = this._nodeSynchronizer.GetCachedNodesAs<NodeViewModel>();
@@ -83,8 +90,15 @@ namespace StateOfNeo.Server.Infrastructure
                 this._nodeCache.Update(NodeEngine.GetNodesByBFSAlgo());
             }
 
+            //if (NeoBlocksWithoutNodesUpdate % NotificationConstants.DEFAULT_NEO_BLOCKS_STEP_P2P_CHECK == 0 || IsInitialBlockConnection)
+            //{
+            //    var failedP2PConnections = _peersEngine.CheckP2PStatus(_nodeSynchronizer.CachedDbNodes);
+            //    await _failP2PHub.Clients.All.SendAsync("Receive", failedP2PConnections);
+            //}
+
             LastBlockReceiveTime = DateTime.UtcNow;
             NeoBlocksWithoutNodesUpdate++;
+            IsInitialBlockConnection = false;
         }
 
         public void UpdateBlockInfoDB(uint startHeight)
@@ -148,18 +162,18 @@ namespace StateOfNeo.Server.Infrastructure
         {
             if (_netSettings.Net == NetConstants.MAIN_NET)
             {
-                return _ctx.MainNetBlockInfos.Sum(x => x.TxCount);
+                return _ctx.MainNetBlockInfos.OrderByDescending(x => x.Id).Take(5000).Sum(x => x.TxCount);
             }
-            return _ctx.TestNetBlockInfos.Sum(x => x.TxCount);
+            return _ctx.TestNetBlockInfos.OrderByDescending(x => x.Id).Take(5000).Sum(x => x.TxCount);
         }
 
         private decimal GetAverageTransactionCount()
         {
             if (_netSettings.Net == NetConstants.MAIN_NET)
             {
-                return (decimal)GetTotalTransactionCount() / (decimal)_ctx.MainNetBlockInfos.OrderByDescending(x => x.BlockHeight).First().BlockHeight;
+                return (decimal)GetTotalTransactionCount() / 5000;
             }
-            return (decimal)GetTotalTransactionCount() / (decimal)_ctx.TestNetBlockInfos.OrderByDescending(x => x.BlockHeight).First().BlockHeight;
+            return (decimal)GetTotalTransactionCount() / 5000;
         }
     }
 }

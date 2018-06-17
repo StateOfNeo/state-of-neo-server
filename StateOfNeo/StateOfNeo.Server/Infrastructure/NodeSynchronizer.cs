@@ -53,12 +53,12 @@ namespace StateOfNeo.Server.Infrastructure
 
         public async Task Init()
         {
-            await SyncCacheAndDb();
+            //SyncCacheAndDb();
             await UpdateNodesInformation();
             this._nodeCache.NodeList.Clear();
         }
 
-        private async Task SyncCacheAndDb()
+        private void SyncCacheAndDb()
         {
             foreach (var cacheNode in _nodeCache.NodeList)
             {
@@ -71,7 +71,7 @@ namespace StateOfNeo.Server.Infrastructure
                     newDbNode.Type = NodeAddressType.P2P_TCP;
                     newDbNode.Net = _netsettings.Value.Net;
                     _ctx.Nodes.Add(newDbNode);
-                    await _ctx.SaveChangesAsync();
+                    _ctx.SaveChanges();
 
                     var nodeDbAddress = new NodeAddress
                     {
@@ -82,7 +82,7 @@ namespace StateOfNeo.Server.Infrastructure
                         NodeId = newDbNode.Id
                     };
                     _ctx.NodeAddresses.Add(nodeDbAddress);
-                    await _ctx.SaveChangesAsync();
+                    _ctx.SaveChanges();
                 }
                 else
                 {
@@ -98,7 +98,7 @@ namespace StateOfNeo.Server.Infrastructure
                             NodeId = existingDbNode.Id
                         };
                         _ctx.NodeAddresses.Add(nodeDbAddress);
-                        await _ctx.SaveChangesAsync();
+                        _ctx.SaveChanges();
                     }
                 }
             }

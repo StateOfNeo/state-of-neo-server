@@ -10,6 +10,8 @@ using StateOfNeo.Server.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace StateOfNeo.Server.Controllers
 {
@@ -27,98 +29,17 @@ namespace StateOfNeo.Server.Controllers
             _locationCaller = locationCaller;
             _netSettings = netSettings.Value;
         }
-
-        // GET api/values
+        
         [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
+        public async Task<IActionResult> Post([FromQuery]string ip)
         {
-            return new string[] { "value1", Blockchain.Default.Height.ToString() };
-            //return new string[] { "value1" };
-        }
+            var remoteNodesCached = Startup.localNode.GetRemoteNodes().ToList();
+            var endPoint = new IPEndPoint(IPAddress.Parse(ip), 10333);
+            await Startup.localNode.ConnectToPeerAsync(endPoint);
+            var remoteNodes = Startup.localNode.GetRemoteNodes();
+            var success = remoteNodes.Any(rn => rn.RemoteEndpoint.Address.ToString().ToMatchedIp() == ip);
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/values
-        [HttpPost]
-        public void Post()
-        {
-            //_locationCaller.UpdateAllNodeLocations().ConfigureAwait(false);
-            _nodeSynchronizer.Init().ConfigureAwait(false);
-            UpdateBlockInfoDB(200865);
-        }
-
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
-
-        public void UpdateBlockInfoDB(uint startHeight)
-        {
-            for (uint i = startHeight; i > 0; i--)
-            {
-                var newBLock = Startup.BlockChain.GetBlock(i);
-                UpdateBlockInfo(newBLock);
-            }
-        }
-
-        private BaseBlockInfo UpdateBlockInfo(Block block)
-        {
-            var txsysfee = (int)block.Transactions.Select(t => t.SystemFee).Sum();
-            var txnetfee = (int)Block.CalculateNetFee(block.Transactions);
-            var txoutvalues = (int)block.Transactions.Select(t => t.Outputs.Select(o => o.Value)).SelectMany(x => x).Sum();
-            BaseBlockInfo newBlockInfo = null;
-
-            if (_netSettings.Net == NetConstants.MAIN_NET)
-            {
-                var info = _ctx.MainNetBlockInfos.FirstOrDefault(x => x.BlockHeight == block.Header.Index);
-                if (info == null)
-                {
-                    var dbInfo = new MainNetBlockInfo
-                    {
-                        BlockHeight = block.Header.Index,
-                        SecondsCount = 20,
-                        TxCount = block.Transactions.Length,
-                        TxSystemFees = txsysfee,
-                        TxNetworkFees = txnetfee,
-                        TxOutputValues = txoutvalues
-                    };
-                    _ctx.MainNetBlockInfos.Add(dbInfo);
-                    _ctx.SaveChanges();
-                    newBlockInfo = dbInfo;
-                }
-            }
-            else
-            {
-                var info = _ctx.TestNetBlockInfos.FirstOrDefault(x => x.BlockHeight == block.Header.Index);
-                if (info == null)
-                {
-                    var dbInfo = new TestNetBlockInfo
-                    {
-                        BlockHeight = block.Header.Index,
-                        SecondsCount = 20,
-                        TxCount = block.Transactions.Length,
-                        TxSystemFees = txsysfee,
-                        TxNetworkFees = txnetfee,
-                        TxOutputValues = txoutvalues
-                    };
-                    _ctx.TestNetBlockInfos.Add(dbInfo);
-                    _ctx.SaveChanges();
-                    newBlockInfo = dbInfo;
-                }
-            }
-            return newBlockInfo;
+            return this.Ok(success);
         }
     }
 }
